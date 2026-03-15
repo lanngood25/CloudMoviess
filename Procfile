@@ -1,1 +1,1 @@
-web: uvicorn backend:app --host 0.0.0.0 --port $PORT
+web: python3.11 -m uvicorn backend:app --host 0.0.0.0 --port $PORT
