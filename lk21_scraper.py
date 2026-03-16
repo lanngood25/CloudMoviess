@@ -6,6 +6,7 @@ Search LK21 and extract stream URLs from movie pages.
 import asyncio
 import logging
 import re
+from typing import Optional
 from urllib.parse import quote_plus, urljoin, urlparse
 
 import httpx
@@ -63,8 +64,8 @@ def _make_slug(title: str, year: str = "") -> str:
     return slug
 
 
-async def _fetch_lk21_page(url: str) -> dict | None:
-    """Fetch a LK21 movie page and extract metadata. Returns None if not a real movie page."""
+async def _fetch_lk21_page(url: str) -> Optional[dict]:
+    """Fetch LK21 page, return metadata if it's a real movie page."""
     try:
         async with _client() as client:
             r = await client.get(url, timeout=10)
@@ -72,59 +73,42 @@ async def _fetch_lk21_page(url: str) -> dict | None:
                 return None
             soup = BeautifulSoup(r.text, "html.parser")
 
-            # Must have a real movie title (not homepage)
-            title_el = soup.select_one("h1.entry-title, h1, .judul-film, .film-title")
-            if not title_el:
-                title_el = soup.select_one("h2, .title")
+            # Reject homepage/search page
+            title_el = soup.select_one("h1.entry-title, h1.judul-film, .film-title, h1")
             if not title_el:
                 return None
             found_title = re.sub(r"\s+", " ", title_el.get_text()).strip()
-
-            # Reject if it looks like homepage or search page
-            reject_phrases = [
+            reject = [
                 "nonton film",
                 "layarkaca21",
                 "lk21",
                 "sub indo gratis",
-                "streaming",
+                "streaming film",
             ]
-            if any(p in found_title.lower() for p in reject_phrases):
-                return None
-            if len(found_title) < 2:
+            if any(p in found_title.lower() for p in reject) or len(found_title) < 2:
                 return None
 
-            img_el = soup.select_one(
-                ".poster img, .thumb img, .gmr-item-result img, img[class*=poster]"
-            )
-            if not img_el:
-                img_el = soup.select_one("article img, .entry-content img")
+            img_el = soup.select_one(".poster img, .thumb img, img[class*=poster]")
             poster = ""
             if img_el:
                 poster = img_el.get("src") or img_el.get("data-src", "")
                 if poster and poster.startswith("//"):
                     poster = "https:" + poster
 
-            # Extract year from page
-            year_el = soup.select_one(
-                ".year, .gmr-movie-on, time, [itemprop=dateCreated]"
-            )
-            page_year = ""
-            if year_el:
-                page_year = _extract_year(year_el.get_text())
-            if not page_year:
-                page_year = _extract_year(soup.get_text()[:2000])
-
+            year_el = soup.select_one(".year, .gmr-movie-on, time")
+            page_year = _extract_year(
+                year_el.get_text() if year_el else ""
+            ) or _extract_year(soup.get_text()[:1500])
+            score_el = soup.select_one(".imdb, .rating, [itemprop=ratingValue]")
+            score = _extract_rating(score_el.get_text() if score_el else "")
             desc_el = soup.select_one(
-                ".synopsis p, .description p, .entry-content p, [itemprop=description]"
+                ".synopsis p, .entry-content p, [itemprop=description]"
             )
             desc = (
                 re.sub(r"\s+", " ", desc_el.get_text()).strip()[:300] if desc_el else ""
             )
 
-            score_el = soup.select_one(".imdb, .rating, [itemprop=ratingValue]")
-            score = _extract_rating(score_el.get_text() if score_el else "")
-
-            logger.info(f"LK21 direct URL hit: {url} → {found_title}")
+            logger.info(f"LK21 direct hit: {url} → {found_title}")
             return {
                 "subjectId": f"lk21_{abs(hash(url)) % 10**10}",
                 "title": found_title,
@@ -159,49 +143,27 @@ async def _fetch_lk21_page(url: str) -> dict | None:
                 },
             }
     except Exception as e:
-        logger.debug(f"LK21 page fetch miss {url}: {e}")
+        logger.debug(f"LK21 page miss {url}: {e}")
     return None
 
 
-async def _try_direct_url(title: str, year: str) -> dict | None:
+async def _try_direct_url(title: str, year: str) -> Optional[dict]:
     """
-    Try fetching LK21 movie page by slug.
-    If year given: try /title-year
-    If no year: try /title-year for years 2024..2000 (stop on first hit, max 8 tries)
+    Try a few smart URL variants for a movie title.
+    Only tries slug WITH known year — no year brute force.
     """
-    base_slug = _make_slug(title, "")  # slug without year
+    base_slug = _make_slug(title, "")
 
-    # If year is known, just try that one
+    # Only try if we have a year
     if year:
         url = f"{LK21_URL}/{base_slug}-{year}"
         result = await _fetch_lk21_page(url)
         if result:
             return result
-        # Also try without year suffix
-        url2 = f"{LK21_URL}/{base_slug}"
-        return await _fetch_lk21_page(url2)
 
-    # No year — try years from recent to old (max 8 attempts)
-    import datetime
-
-    current_year = datetime.datetime.now().year
-    # Go back to 1990 to cover all classic movies
-    years_to_try = list(range(current_year, 1989, -1))
-
-    # Try in batches of 8 concurrently to avoid overwhelming LK21
-    found = None
-    for i in range(0, len(years_to_try), 8):
-        batch = years_to_try[i : i + 8]
-        tasks = [_fetch_lk21_page(f"{LK21_URL}/{base_slug}-{y}") for y in batch]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        for r in results:
-            if r and not isinstance(r, Exception):
-                return r
-    return await _fetch_lk21_page(f"{LK21_URL}/{base_slug}")
-
-    # (unreachable - kept for structure)
-    tasks = [_fetch_lk21_page(f"{LK21_URL}/{base_slug}-{y}") for y in years_to_try]
-    return None  # already handled above
+    # Try without year
+    url_bare = f"{LK21_URL}/{base_slug}"
+    return await _fetch_lk21_page(url_bare)
 
 
 async def search_lk21_movies(query: str, max_results: int = 20) -> list:
@@ -232,6 +194,18 @@ async def search_lk21_movies(query: str, max_results: int = 20) -> list:
         year = year_match.group(0) if year_match else ""
         title_part = re.sub(r"(19|20)\d{2}", "", query).strip()
         direct_task = _try_direct_url(title_part or query, year)
+
+        # Also search LK21 with year appended if not already in query
+        extra_search_urls = []
+        if not year and query:
+            # Try searching "query year" for common years (last 15 years)
+            import datetime
+
+            cur_year = datetime.datetime.now().year
+            for y in range(cur_year, cur_year - 15, -1):
+                extra_search_urls.append(
+                    f"{LK21_URL}/?s={quote_plus(query + ' ' + str(y))}"
+                )
 
         soup_pages = [BeautifulSoup(h, "html.parser") for h in all_html]
 
