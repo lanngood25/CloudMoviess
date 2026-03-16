@@ -1,0 +1,337 @@
+"""
+CloudMovies — LK21 Scraper (Movies Only)
+Search LK21 and extract stream URLs from movie pages.
+"""
+
+import asyncio
+import logging
+import re
+from urllib.parse import quote_plus, urljoin, urlparse
+
+import httpx
+from bs4 import BeautifulSoup
+
+logger = logging.getLogger("cloudmovies.lk21")
+
+LK21_URL = "https://tv9.lk21official.cc"
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 Chrome/124 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+    "Accept-Language": "id-ID,id;q=0.9,en;q=0.7",
+    "Referer": LK21_URL + "/",
+}
+
+
+def _client(referer=None):
+    h = dict(HEADERS)
+    if referer:
+        h["Referer"] = referer
+    return httpx.AsyncClient(
+        headers=h,
+        follow_redirects=True,
+        timeout=httpx.Timeout(connect=12, read=25, write=10, pool=10),
+    )
+
+
+def _extract_year(text):
+    m = re.search(r"(19|20)\d{2}", text)
+    return m.group(0) if m else ""
+
+
+def _extract_rating(text):
+    m = re.search(r"(\d+\.?\d*)\s*/\s*10", text)
+    if m:
+        return float(m.group(1))
+    m2 = re.search(r"(\d+\.\d+)", text)
+    return float(m2.group(1)) if m2 else 0.0
+
+
+# ── SEARCH ────────────────────────────────────────────────────────────────────
+
+
+async def search_lk21_movies(query: str, max_results: int = 20) -> list:
+    """Search LK21, return movies only (no series)."""
+    url = f"{LK21_URL}/?s={quote_plus(query)}"
+    results = []
+    try:
+        async with _client() as client:
+            r = await client.get(url)
+            if r.status_code != 200:
+                return []
+            soup = BeautifulSoup(r.text, "lxml")
+
+        cards = (
+            soup.select("article.item")
+            or soup.select(".movies-list article")
+            or soup.select("article")
+            or soup.select(".item")
+        )
+
+        series_keywords = [
+            "season",
+            "episode",
+            "s01",
+            "s02",
+            "eps",
+            "the series",
+            "complete series",
+        ]
+
+        for card in cards:
+            if len(results) >= max_results:
+                break
+            try:
+                title_el = card.select_one("h3, h2, .entry-title, .title")
+                if not title_el:
+                    continue
+                title = re.sub(r"\s+", " ", title_el.get_text()).strip()
+                if not title:
+                    continue
+
+                # Skip series
+                title_lower = title.lower()
+                if any(kw in title_lower for kw in series_keywords):
+                    continue
+                if re.search(r"\bS\d{2}E\d{2}\b", title, re.I):
+                    continue
+
+                link_el = card.select_one("a[href]")
+                if not link_el:
+                    continue
+                page_url = link_el["href"]
+                if not page_url.startswith("http"):
+                    page_url = urljoin(LK21_URL, page_url)
+
+                img_el = card.select_one("img")
+                poster = ""
+                if img_el:
+                    poster = (
+                        img_el.get("src")
+                        or img_el.get("data-src")
+                        or img_el.get("data-lazy-src")
+                        or ""
+                    )
+                    if poster.startswith("//"):
+                        poster = "https:" + poster
+
+                year = _extract_year(card.get_text())
+                score_el = card.select_one(".rating, .imdb, .score")
+                score = _extract_rating(score_el.get_text() if score_el else "")
+                genre_els = card.select(".genre a, .categories a, .cat a")
+                genres = ", ".join(g.get_text(strip=True) for g in genre_els[:3])
+
+                results.append(
+                    {
+                        "subjectId": f"lk21_{abs(hash(page_url)) % 10**10}",
+                        "title": title,
+                        "description": "",
+                        "releaseDate": f"{year}-01-01" if year else "2000-01-01",
+                        "duration": 0,
+                        "genre": genres or "Movie",
+                        "countryName": "",
+                        "imdbRatingValue": score,
+                        "subjectType": 1,
+                        "detailPath": "",
+                        "corner": "",
+                        "appointmentCnt": 0,
+                        "appointmentDate": "",
+                        "stafflist": None,
+                        "subtitles": "id",
+                        "hasResource": True,
+                        "source": "lk21",
+                        "sourceUrl": page_url,
+                        "sourceName": "LK21",
+                        "cover": {
+                            "url": poster,
+                            "thumbnail": poster,
+                            "width": 0,
+                            "height": 0,
+                            "size": 0,
+                            "format": "",
+                            "blurHash": "",
+                            "avgHueLight": "",
+                            "avgHueDark": "",
+                            "id": "0",
+                        },
+                    }
+                )
+            except Exception as card_err:
+                logger.debug(f"Card parse error: {card_err}")
+                continue
+
+        logger.info(f"LK21 search '{query}': {len(results)} movies")
+    except Exception as e:
+        logger.error(f"LK21 search error: {e}")
+
+    return results
+
+
+# ── STREAM EXTRACTION ─────────────────────────────────────────────────────────
+
+
+async def extract_lk21_stream(page_url: str) -> dict:
+    """Visit LK21 movie page, find all embed/direct video URLs."""
+    streams = []
+    try:
+        async with _client(referer=LK21_URL) as client:
+            r = await client.get(page_url)
+            if r.status_code != 200:
+                return {"streams": [], "captions": []}
+            soup = BeautifulSoup(r.text, "lxml")
+            html = r.text
+
+        # 1. Direct mp4/m3u8 in page source
+        direct = re.findall(r'https?://[^\s\'"<>]+\.(?:mp4|m3u8)[^\s\'"<>]*', html)
+        for u in dict.fromkeys(direct):
+            if any(skip in u for skip in ["thumbnail", "poster", ".css", "cdn.js"]):
+                continue
+            label = "1080p" if "1080" in u else "720p" if "720" in u else "HD"
+            streams.append(
+                {"url": u, "resolution": label, "label": label, "source": "direct"}
+            )
+            if len(streams) >= 3:
+                break
+
+        # 2. JS file/src/source keys
+        js_urls = re.findall(
+            r'(?:file|src|source)\s*:\s*["\']( https?://[^"\']+)["\']', html
+        )
+        for u in dict.fromkeys(js_urls):
+            u = u.strip()
+            if u and u not in {s["url"] for s in streams}:
+                label = "1080p" if "1080" in u else "720p" if "720" in u else "HD"
+                streams.append(
+                    {"url": u, "resolution": label, "label": label, "source": "js"}
+                )
+
+        # 3. Iframes
+        iframes = soup.select("iframe[src], iframe[data-src]")
+        embed_urls = []
+        skip_domains = ["google.com/maps", "facebook.com", "twitter.com", "youtube.com"]
+        for iframe in iframes:
+            src = iframe.get("src") or iframe.get("data-src", "")
+            if (
+                src
+                and src.startswith("http")
+                and not any(d in src for d in skip_domains)
+            ):
+                embed_urls.append(src)
+
+        # 4. Resolve embeds (max 4 to avoid rate limits)
+        resolved = await asyncio.gather(
+            *[_resolve_embed(eu, page_url) for eu in embed_urls[:4]],
+            return_exceptions=True,
+        )
+        for res in resolved:
+            if isinstance(res, list):
+                streams.extend(res)
+
+        # Deduplicate
+        seen = set()
+        unique = []
+        for s in streams:
+            if s["url"] not in seen:
+                seen.add(s["url"])
+                unique.append(s)
+
+        logger.info(f"LK21 extract '{page_url}': {len(unique)} streams")
+        return {"streams": unique[:6], "captions": []}
+
+    except Exception as e:
+        logger.error(f"LK21 extract error: {e}")
+        return {"streams": [], "captions": []}
+
+
+async def _resolve_embed(embed_url: str, referer: str) -> list:
+    domain = urlparse(embed_url).netloc.lower()
+    try:
+        if "streamtape" in domain:
+            return await _resolve_streamtape(embed_url)
+        elif "dood" in domain:
+            return await _resolve_doodstream(embed_url)
+        else:
+            return await _resolve_generic(embed_url, referer)
+    except Exception as e:
+        logger.debug(f"Embed resolve error {embed_url}: {e}")
+        return []
+
+
+async def _resolve_streamtape(url: str) -> list:
+    try:
+        async with _client(referer="https://streamtape.com") as c:
+            r = await c.get(url, timeout=10)
+            m = re.search(r"(streamtape\.com/get_video\?[^\s\"'<>]+)", r.text)
+            if m:
+                return [
+                    {
+                        "url": "https://" + m.group(1),
+                        "resolution": "HD",
+                        "label": "HD",
+                        "source": "streamtape",
+                    }
+                ]
+            m2 = re.search(
+                r'(?:file|src)\s*[=:]\s*["\']( https?://[^"\']+)["\']', r.text
+            )
+            if m2:
+                return [
+                    {
+                        "url": m2.group(1).strip(),
+                        "resolution": "HD",
+                        "label": "HD",
+                        "source": "streamtape",
+                    }
+                ]
+    except Exception as e:
+        logger.debug(f"Streamtape error: {e}")
+    return []
+
+
+async def _resolve_doodstream(url: str) -> list:
+    try:
+        async with _client(referer="https://dood.to") as c:
+            r = await c.get(url, timeout=10)
+            m = re.search(r"/pass_md5/([^\s\"'<>&]+)", r.text)
+            if m:
+                pass_url = "https://dood.to/pass_md5/" + m.group(1)
+                r2 = await c.get(pass_url, timeout=10)
+                token_m = re.search(r"token=([^\s\"'&<>]+)", r.text)
+                token = ("?token=" + token_m.group(1)) if token_m else ""
+                video_url = r2.text.strip() + token
+                if video_url.startswith("http"):
+                    return [
+                        {
+                            "url": video_url,
+                            "resolution": "HD",
+                            "label": "HD",
+                            "source": "dood",
+                        }
+                    ]
+    except Exception as e:
+        logger.debug(f"Doodstream error: {e}")
+    return []
+
+
+async def _resolve_generic(url: str, referer: str) -> list:
+    try:
+        async with _client(referer=referer) as c:
+            r = await c.get(url, timeout=12)
+            found = re.findall(r'https?://[^\s\'"<>]+\.(?:m3u8|mp4)[^\s\'"<>]*', r.text)
+            streams = []
+            for u in dict.fromkeys(found):
+                if any(skip in u for skip in ["thumbnail", "poster", ".css"]):
+                    continue
+                label = "1080p" if "1080" in u else "720p" if "720" in u else "HD"
+                streams.append(
+                    {"url": u, "resolution": label, "label": label, "source": "embed"}
+                )
+                if len(streams) >= 3:
+                    break
+            return streams
+    except Exception as e:
+        logger.debug(f"Generic embed error: {e}")
+    return []

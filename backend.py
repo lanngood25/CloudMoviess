@@ -85,6 +85,7 @@ INDEX_HTML = os.path.join(BASE_DIR, "index.html")
 
 # Include AI router
 from ai_router import router as ai_router
+from lk21_scraper import search_lk21_movies, extract_lk21_stream
 
 app.include_router(ai_router)
 
@@ -159,6 +160,42 @@ async def search(body: SearchBody):
         return {"items": items_list(model.items), "pager": model.pager.model_dump()}
     except Exception as e:
         logger.error(f"search error: {e}")
+        raise HTTPException(500, str(e))
+
+
+@app.post("/api/search/fallback")
+async def search_fallback(body: SearchBody):
+    """Search LK21 movies when MovieBox has no results."""
+    try:
+        query = body.keyword.strip()
+        if not query:
+            raise HTTPException(400, "keyword required")
+        results = await search_lk21_movies(query, max_results=24)
+        return {"items": results, "source": "lk21", "total": len(results)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"fallback search error: {e}")
+        raise HTTPException(500, str(e))
+
+
+@app.get("/api/lk21/stream")
+async def lk21_stream(url: str = Query(...)):
+    """
+    Extract direct video stream URL from LK21 movie page.
+    The 'url' param is the LK21 movie page URL.
+    Streams are routed through /api/video-proxy for CORS bypass.
+    """
+    try:
+        data = await extract_lk21_stream(url)
+        # Wrap stream URLs through video proxy
+        for s in data.get("streams", []):
+            raw = s["url"]
+            if raw:
+                s["proxy_url"] = f"/api/video-proxy?url={quote(raw, safe='')}"
+        return data
+    except Exception as e:
+        logger.error(f"lk21 stream error: {e}")
         raise HTTPException(500, str(e))
 
 

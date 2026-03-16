@@ -2305,6 +2305,170 @@
         width: 260px;
       }
     }
+
+    /* ── SOURCE BADGE on cards ── */
+    .card-source {
+      position: absolute;
+      bottom: 7px;
+      left: 7px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: .6rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      backdrop-filter: blur(4px);
+    }
+
+    .card-source.lk21 {
+      background: rgba(34, 197, 94, .85);
+      color: #000;
+    }
+
+    .card-source.nd {
+      background: rgba(59, 130, 246, .85);
+      color: #fff;
+    }
+
+    .fallback-notice {
+      grid-column: 1/-1;
+      padding: 10px 16px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      background: rgba(59, 130, 246, .1);
+      border: 1px solid rgba(59, 130, 246, .3);
+      font-size: .84rem;
+      color: #93c5fd;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── LK21 PLAYER MODAL ── */
+    #lk21-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9990;
+      background: rgba(0, 0, 0, .92);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+    }
+
+    #lk21-modal.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .lk21-modal-inner {
+      width: 100%;
+      max-width: 900px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .8);
+      transform: scale(.95);
+      transition: transform .3s;
+    }
+
+    #lk21-modal.open .lk21-modal-inner {
+      transform: scale(1);
+    }
+
+    .lk21-modal-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .lk21-modal-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: .5px;
+      flex: 1;
+    }
+
+    .lk21-modal-src {
+      font-size: .72rem;
+      color: var(--text3);
+    }
+
+    .lk21-badge {
+      background: #22c55e;
+      color: #000;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: .7rem;
+      font-weight: 800;
+    }
+
+    .lk21-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .lk21-close:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, .1);
+    }
+
+    .lk21-video-wrap {
+      position: relative;
+      aspect-ratio: 16/9;
+      background: #000;
+    }
+
+    #lk21-vid {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .lk21-options {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      background: var(--bg);
+    }
+
+    .lk21-options label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text3);
+      font-weight: 700;
+    }
+
+    .lk21-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+      background: #000;
+    }
   </style>
 </head>
 
@@ -2827,10 +2991,21 @@
       const cover = img(item.cover || item.image);
       const score = item.imdbRatingValue ? item.imdbRatingValue.toFixed(1) : '';
       const type = item.subjectType === 1 ? 'Movie' : item.subjectType === 2 ? 'Series' : '';
+      // Source badge for LK21/NontonDrama fallback results
+      const srcBadge = item.source === 'lk21'
+        ? '<span class="card-source lk21">LK21</span>'
+        : item.source === 'nontondrama'
+          ? '<span class="card-source nd">Drama</span>'
+          : '';
       const d = document.createElement('div');
       d.className = 'card';
       d.style.animationDelay = delay + 'ms';
-      d.onclick = () => showDetail(item);
+      // LK21: open inline player modal; other external sources: new tab
+      d.onclick = item.source === 'lk21'
+        ? () => showLK21Player(item)
+        : item.sourceUrl
+          ? () => window.open(item.sourceUrl, '_blank')
+          : () => showDetail(item);
       d.innerHTML = `
     <div class="card-img-wrap">
       <img class="card-img" src="${cover}" alt="${item.title}" loading="lazy"
@@ -2840,6 +3015,7 @@
       </div>
       ${type ? `<span class="card-badge">${type}</span>` : ''}
       ${score ? `<span class="card-score">★ ${score}</span>` : ''}
+      ${srcBadge}
     </div>
     <div class="card-info">
       <div class="card-name">${item.title}</div>
@@ -2981,6 +3157,29 @@
         }
         $('s-sub').textContent = `${items.length} results found`;
         const grid = $('s-grid');
+        if (!items.length && q) {
+          // ── AUTO FALLBACK to LK21 + NontonDrama ──
+          $('s-sub').textContent = '0 di MovieBox — mencari di LK21 & NontonDrama…';
+          grid.innerHTML = '<div class="spin-wrap" style="grid-column:1/-1"><div class="spin"></div><span class="spin-lbl">Searching LK21...</span></div>';
+          try {
+            const fbRes = await fetch(API + '/search/fallback', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keyword: q, subject_type: type, page: 1, per_page: 24 }),
+            });
+            const fbData = await fbRes.json();
+            const fbItems = fbData.items || [];
+            if (!fbItems.length) {
+              grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><h3>Tidak Ditemukan</h3><p>Film tidak tersedia di MovieBox, LK21, maupun NontonDrama.</p></div>`;
+              return;
+            }
+            $('s-sub').textContent = `${fbItems.length} results dari LK21`;
+            grid.innerHTML = `<div class="fallback-notice"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Tidak ditemukan di MovieBox — hasil dari <b>LK21</b>. Klik film untuk streaming langsung! 🎬</div>`;
+            fbItems.forEach((it, i) => { const c = mkCard(it, i * 30); c.style.width = ''; grid.appendChild(c); });
+          } catch {
+            grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>No Results</h3><p>Coba keyword berbeda.</p></div>`;
+          }
+          return;
+        }
         if (!items.length) {
           grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><h3>No Results</h3><p>Try a different keyword or browse trending.</p></div>`;
           return;
@@ -3783,6 +3982,90 @@
       });
     };
 
+
+    /* ───── LK21 PLAYER ───── */
+    let _lk21Streams = [];
+    let _lk21Hls = null;
+
+    async function showLK21Player(item) {
+      $('lk21-modal').classList.add('open');
+      $('lk21-modal-title').textContent = item.title;
+      $('lk21-modal-src').textContent = item.releaseDate?.slice(0, 4) || '';
+      $('lk21-ext-link').href = item.sourceUrl || '#';
+      $('lk21-loading').style.display = 'flex';
+      $('lk21-load-txt').textContent = 'Fetching stream from LK21…';
+      $('lk21-src-select').innerHTML = '';
+      const vid = $('lk21-vid');
+      if (_lk21Hls) { _lk21Hls.destroy(); _lk21Hls = null; }
+      vid.src = '';
+
+      try {
+        const res = await fetch(`/api/lk21/stream?url=${encodeURIComponent(item.sourceUrl)}`);
+        const data = await res.json();
+        _lk21Streams = data.streams || [];
+
+        if (!_lk21Streams.length) {
+          $('lk21-load-txt').textContent = '❌ Stream tidak ditemukan. Coba buka di LK21 langsung.';
+          return;
+        }
+
+        // Populate select
+        const sel = $('lk21-src-select');
+        _lk21Streams.forEach((s, i) => {
+          const opt = document.createElement('option');
+          opt.value = i;
+          opt.textContent = `${s.label || s.resolution || 'HD'} (${s.source || 'stream'})`;
+          sel.appendChild(opt);
+        });
+
+        // Play best stream
+        playLK21Stream(0);
+      } catch (e) {
+        $('lk21-load-txt').textContent = '❌ Gagal memuat stream. Coba buka di LK21 langsung.';
+        console.error('LK21 stream error:', e);
+      }
+    }
+
+    function playLK21Stream(idx) {
+      const s = _lk21Streams[idx];
+      if (!s) return;
+      const vid = $('lk21-vid');
+      const url = s.proxy_url || s.url;
+
+      if (_lk21Hls) { _lk21Hls.destroy(); _lk21Hls = null; }
+
+      const isHLS = url.includes('.m3u8') || url.includes('m3u8');
+      $('lk21-loading').style.display = 'flex';
+      $('lk21-load-txt').textContent = 'Buffering…';
+
+      if (isHLS && Hls.isSupported()) {
+        _lk21Hls = new Hls({ enableWorker: false });
+        _lk21Hls.loadSource(url);
+        _lk21Hls.attachMedia(vid);
+        _lk21Hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          $('lk21-loading').style.display = 'none';
+          vid.play().catch(() => { });
+        });
+        _lk21Hls.on(Hls.Events.ERROR, (_, d) => {
+          if (d.fatal) $('lk21-load-txt').textContent = '❌ Stream error. Coba source lain.';
+        });
+      } else {
+        vid.src = url;
+        vid.oncanplay = () => { $('lk21-loading').style.display = 'none'; vid.play().catch(() => { }); };
+        vid.onerror = () => { $('lk21-load-txt').textContent = '❌ Stream tidak bisa diputar. Coba source lain.'; };
+        vid.load();
+      }
+    }
+
+    function switchLK21Stream(idx) { playLK21Stream(parseInt(idx)); }
+
+    function closeLK21Modal() {
+      $('lk21-modal').classList.remove('open');
+      const vid = $('lk21-vid');
+      vid.pause(); vid.src = '';
+      if (_lk21Hls) { _lk21Hls.destroy(); _lk21Hls = null; }
+    }
+
     /* ───── BOOT ───── */
     (async () => {
       try {
@@ -3878,6 +4161,48 @@
           <path d="M22 2 11 13M22 2 15 22l-4-9-9-4 20-7z" />
         </svg>
       </button>
+    </div>
+  </div>
+
+  <!-- LK21 Player Modal -->
+  <div id="lk21-modal" onclick="closeLK21Modal()">
+    <div class="lk21-modal-inner" onclick="event.stopPropagation()">
+      <div class="lk21-modal-head">
+        <span class="lk21-badge">LK21</span>
+        <div>
+          <div class="lk21-modal-title" id="lk21-modal-title">Loading…</div>
+          <div class="lk21-modal-src" id="lk21-modal-src"></div>
+        </div>
+        <div class="spacer"></div>
+        <button class="lk21-close" onclick="closeLK21Modal()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="lk21-video-wrap">
+        <video id="lk21-vid" controls playsinline crossorigin="anonymous"></video>
+        <div class="lk21-loading" id="lk21-loading">
+          <div class="spin"></div>
+          <div class="spin-lbl" id="lk21-load-txt">Fetching stream from LK21…</div>
+        </div>
+      </div>
+      <div class="lk21-options">
+        <label>Stream Source</label>
+        <select class="opt-select" id="lk21-src-select" onchange="switchLK21Stream(this.value)"
+          style="min-width:160px"></select>
+        <div class="spacer"></div>
+        <a id="lk21-ext-link" href="#" target="_blank" class="btn-ghost"
+          style="padding:6px 14px;font-size:.8rem;text-decoration:none">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+          Buka di LK21
+        </a>
+      </div>
     </div>
   </div>
 </body>
