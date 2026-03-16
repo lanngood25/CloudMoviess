@@ -1808,6 +1808,75 @@
       font-weight: 600;
       color: var(--red);
     }
+
+    /* ── SKIP OVERLAY ── */
+    .skip-overlay {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 35%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .skip-overlay.left {
+      left: 0;
+    }
+
+    .skip-overlay.right {
+      right: 0;
+    }
+
+    .skip-overlay.show {
+      opacity: 1;
+    }
+
+    .skip-ripple {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .18);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      animation: skipPop .35s ease forwards;
+    }
+
+    @keyframes skipPop {
+      0% {
+        transform: scale(.6);
+        opacity: 0;
+      }
+
+      60% {
+        transform: scale(1.15);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .skip-ripple svg {
+      color: #fff;
+    }
+
+    .skip-ripple span {
+      font-size: .7rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: .5px;
+    }
   </style>
 </head>
 
@@ -1818,8 +1887,8 @@
     <div class="logo" onclick="goHome()">Cloud<span>Movies</span></div>
     <div class="nav-links">
       <button class="active" onclick="goHome()">Home</button>
-      <button onclick="doSearch('',1)">Movies</button>
-      <button onclick="doSearch('',2)">TV Series</button>
+      <button onclick="browseCategory(1)">Movies</button>
+      <button onclick="browseCategory(2)">TV Series</button>
       <button onclick="goTrending()">Trending</button>
     </div>
     <div class="search-wrap">
@@ -2067,6 +2136,23 @@
             </div>
           </div>
         </div>
+        <!-- Skip overlays -->
+        <div class="skip-overlay left" id="skip-left">
+          <div class="skip-ripple">
+            <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
+            </svg>
+            <span>-10s</span>
+          </div>
+        </div>
+        <div class="skip-overlay right" id="skip-right">
+          <div class="skip-ripple">
+            <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 18l8.5-6L6 6v12zm2.5-6 5.5 4V8l-5.5 4zM16 6h2v12h-2z" />
+            </svg>
+            <span>+10s</span>
+          </div>
+        </div>
         <video id="vid" preload="metadata" crossorigin="anonymous" playsinline></video>
         <div id="sub-overlay"></div>
         <div class="vid-ctrls">
@@ -2312,24 +2398,83 @@
 
     /* ───── SEARCH ───── */
     let sTmr;
+    // Browse Movies or TV Series without keyword — load multiple pages
+    async function browseCategory(type) {
+      S.query = ''; S.qType = type;
+      view('search');
+      $('s-head').textContent = type === 1 ? 'Movies' : 'TV Series';
+      $('s-sub').textContent = 'Loading…';
+      $('s-grid').innerHTML = '<div class="spin-wrap" style="grid-column:1/-1"><div class="spin"></div><span class="spin-lbl">Loading…</span></div>';
+      document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', +c.dataset.t === type));
+
+      // Use popular keywords to get more results for browsing
+      const keywords = type === 1
+        ? ['action', 'drama', 'comedy', 'thriller', 'horror', 'romance', 'adventure', 'sci-fi']
+        : ['series', 'drama', 'comedy', 'action', 'thriller', 'fantasy', 'crime', 'mystery'];
+
+      const grid = $('s-grid');
+      grid.innerHTML = '';
+      let total = 0;
+      const seen = new Set();
+
+      for (const kw of keywords) {
+        try {
+          const r = await fetch(API + '/search', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyword: kw, subject_type: type, page: 1, per_page: 24 }),
+          });
+          const data = await r.json();
+          const items = (data.items || []).filter(it => !seen.has(it.subjectId));
+          items.forEach(it => {
+            seen.add(it.subjectId);
+            const c = mkCard(it, total * 20); c.style.width = ''; grid.appendChild(c);
+            total++;
+          });
+          $('s-sub').textContent = `${total} results found`;
+        } catch { }
+        if (total >= 200) break;
+      }
+
+      if (!total) {
+        grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><h3>No Results</h3><p>Try searching a keyword instead.</p></div>`;
+      }
+    }
+
     async function doSearch(q, type = 0) {
       S.query = q; S.qType = type;
+
+      // If no keyword and specific type, use browseCategory
+      if (!q && type !== 0) { browseCategory(type); return; }
+
       view('search');
-      $('s-head').textContent = q ? `"${q}"` : type === 1 ? 'Movies' : type === 2 ? 'TV Series' : 'All Content';
+      $('s-head').textContent = q ? `"${q}"` : 'All Content';
       $('s-sub').textContent = 'Loading…';
       $('s-grid').innerHTML = '<div class="spin-wrap" style="grid-column:1/-1"><div class="spin"></div><span class="spin-lbl">Fetching…</span></div>';
       document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', +c.dataset.t === type));
       try {
-        let data;
-        if (!q && type === 0) data = await api('/trending?page=0&per_page=48');
-        else {
-          const r = await fetch(API + '/search', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keyword: q || '', subject_type: type, page: 1, per_page: 48 }),
+        let data, items = [];
+        if (!q && type === 0) {
+          // Trending — load page 0 and 1 for more results
+          const [p0, p1] = await Promise.all([
+            api('/trending?page=0&per_page=24'),
+            api('/trending?page=1&per_page=24'),
+          ]);
+          const seen = new Set();
+          const all = [...(p0.items || p0.subjectList || []), ...(p1.items || p1.subjectList || [])];
+          items = all.filter(it => { if (seen.has(it.subjectId)) return false; seen.add(it.subjectId); return true; });
+        } else {
+          // Multi-page search for keyword
+          const pages = await Promise.all([1, 2, 3].map(page =>
+            fetch(API + '/search', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keyword: q, subject_type: type, page, per_page: 24 }),
+            }).then(r => r.json()).catch(() => ({ items: [] }))
+          ));
+          const seen = new Set();
+          items = pages.flatMap(d => d.items || []).filter(it => {
+            if (seen.has(it.subjectId)) return false; seen.add(it.subjectId); return true;
           });
-          data = await r.json();
         }
-        const items = data.items || data.subjectList || [];
         $('s-sub').textContent = `${items.length} results found`;
         const grid = $('s-grid');
         if (!items.length) {
@@ -2337,14 +2482,17 @@
           return;
         }
         grid.innerHTML = '';
-        items.forEach((it, i) => { const c = mkCard(it, i * 30); c.style.width = ''; grid.appendChild(c); });
+        items.forEach((it, i) => { const c = mkCard(it, i * 20); c.style.width = ''; grid.appendChild(c); });
       } catch (e) {
         $('s-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Error</h3><p>${e.message}</p></div>`;
       }
     }
+
     function filterType(el, t) {
       document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
-      el.classList.add('on'); doSearch(S.query, t);
+      el.classList.add('on');
+      if (!S.query && t !== 0) browseCategory(t);
+      else doSearch(S.query, t);
     }
 
     /* Search input */
@@ -2764,7 +2912,49 @@
     $('p-wrap').addEventListener('mouseleave', () => {
       if (!vid.paused) { clearTimeout(_ctrlTimer); $('p-wrap').classList.remove('show-ctrls'); }
     });
-    vid.addEventListener('click', togglePP);
+    // Tap to skip: left side = -10s, right side = +10s
+    // Single tap on video does NOT pause — only the pause button does
+    let _skipTimer = null;
+    function flashSkip(side) {
+      const el = $(side === 'left' ? 'skip-left' : 'skip-right');
+      el.classList.remove('show');
+      void el.offsetWidth; // reflow to restart animation
+      el.classList.add('show');
+      clearTimeout(_skipTimer);
+      _skipTimer = setTimeout(() => el.classList.remove('show'), 700);
+    }
+
+    $('p-wrap').addEventListener('click', function (e) {
+      // Ignore clicks on controls, loader, overlays
+      if (e.target.closest('.vid-ctrls') || e.target.closest('#vid-loader') || e.target.closest('.skip-overlay')) return;
+      const rect = this.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const half = rect.width / 2;
+      if (x < half) {
+        skip(-10); flashSkip('left');
+      } else {
+        skip(10); flashSkip('right');
+      }
+    });
+
+    // Touch support for mobile
+    let _lastTap = 0;
+    $('p-wrap').addEventListener('touchend', function (e) {
+      if (e.target.closest('.vid-ctrls') || e.target.closest('#vid-loader')) return;
+      const now = Date.now();
+      // Double tap = skip, single tap = show controls only
+      if (now - _lastTap < 300) {
+        e.preventDefault();
+        const touch = e.changedTouches[0];
+        const rect = this.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        if (x < rect.width / 2) { skip(-10); flashSkip('left'); }
+        else { skip(10); flashSkip('right'); }
+      } else {
+        showCtrls();
+      }
+      _lastTap = now;
+    });
 
     function togglePP() { vid.paused ? vid.play() : vid.pause(); }
     function skip(s) { vid.currentTime = Math.max(0, vid.currentTime + s); }
