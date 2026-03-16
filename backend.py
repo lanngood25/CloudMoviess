@@ -87,7 +87,6 @@ INDEX_HTML = os.path.join(BASE_DIR, "index.html")
 
 # Include AI router
 from ai_router import router as ai_router
-from lk21_scraper import search_lk21_movies, extract_lk21_stream
 
 app.include_router(ai_router)
 
@@ -165,42 +164,6 @@ async def search(body: SearchBody):
         raise HTTPException(500, str(e))
 
 
-@app.post("/api/search/fallback")
-async def search_fallback(body: SearchBody):
-    """Search LK21 movies when MovieBox has no results."""
-    try:
-        query = body.keyword.strip()
-        if not query:
-            raise HTTPException(400, "keyword required")
-        results = await search_lk21_movies(query, max_results=24)
-        return {"items": results, "source": "lk21", "total": len(results)}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"fallback search error: {e}")
-        raise HTTPException(500, str(e))
-
-
-@app.get("/api/lk21/stream")
-async def lk21_stream(url: str = Query(...)):
-    """
-    Extract direct video stream URL from LK21 movie page.
-    The 'url' param is the LK21 movie page URL.
-    Streams are routed through /api/video-proxy for CORS bypass.
-    """
-    try:
-        data = await extract_lk21_stream(url)
-        # Wrap stream URLs through video proxy
-        for s in data.get("streams", []):
-            raw = s["url"]
-            if raw:
-                s["proxy_url"] = f"/api/video-proxy?url={quote(raw, safe='')}"
-        return data
-    except Exception as e:
-        logger.error(f"lk21 stream error: {e}")
-        raise HTTPException(500, str(e))
-
-
 @app.get("/api/suggest")
 async def suggest(q: str = Query(..., min_length=1)):
     try:
@@ -241,8 +204,6 @@ async def stream_info(
         session = await get_session()
         referer = f"{MOVIEBOX_HOST}/movies/{detail_path}"
 
-        # NOTE: StreamFilesMetadata (/play) has NO captions field
-        #       Captions ONLY come from the /download endpoint
         actual_se = se if subject_type == 2 else 0
         actual_ep = ep if subject_type == 2 else 0
 
@@ -259,7 +220,6 @@ async def stream_info(
             logger.error(f"stream fetch error: {e}")
             stream_content = {}
 
-        # Small delay to avoid rate limiting between consecutive requests
         await asyncio.sleep(0.3)
 
         # Fetch captions with retry on 429
@@ -300,11 +260,9 @@ async def stream_info(
                 }
             )
 
-        # Captions come from /download endpoint (not /play)
         captions = []
         for c in dl_content.get("captions", []):
             raw_sub_url = str(c.get("url", ""))
-            # Add Indonesian alias — MovieBox uses "id" or "Indonesian"
             lan = c.get("lan", "")
             lan_name = c.get("lanName", "") or lan
             captions.append(
@@ -347,7 +305,6 @@ async def download_info(
     try:
         session = await get_session()
 
-        # Use se=0 ep=0 for movies, actual values for series
         actual_se = se if subject_type == 2 else 0
         actual_ep = ep if subject_type == 2 else 0
 
@@ -480,7 +437,8 @@ async def subtitle_proxy(url: str = Query(...)):
 
 
 if __name__ == "__main__":
-    import uvicorn, os
+    import uvicorn
+    import os
 
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("backend:app", host="0.0.0.0", port=port)
