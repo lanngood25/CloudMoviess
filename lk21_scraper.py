@@ -53,23 +53,128 @@ def _extract_rating(text):
 # ── SEARCH ────────────────────────────────────────────────────────────────────
 
 
-async def search_lk21_movies(query: str, max_results: int = 20) -> list:
-    """Search LK21, return movies only (no series)."""
-    url = f"{LK21_URL}/?s={quote_plus(query)}"
-    results = []
+def _make_slug(title: str, year: str = "") -> str:
+    """Convert title to LK21 URL slug, e.g. 'Battleship 2012' → 'battleship-2012'"""
+    slug = title.lower().strip()
+    slug = re.sub(r"[^a-z0-9\s-]", "", slug)
+    slug = re.sub(r"\s+", "-", slug).strip("-")
+    if year and year not in slug:
+        slug = f"{slug}-{year}"
+    return slug
+
+
+async def _try_direct_url(title: str, year: str) -> dict | None:
+    """Try fetching LK21 movie page directly by slug."""
+    slug = _make_slug(title, year)
+    url = f"{LK21_URL}/{slug}"
     try:
         async with _client() as client:
-            r = await client.get(url)
+            r = await client.get(url, timeout=10)
             if r.status_code != 200:
-                return []
+                return None
             soup = BeautifulSoup(r.text, "html.parser")
+            # Check it's actually a movie page (not 404/search page)
+            title_el = soup.select_one("h1, h2, .entry-title, .title")
+            if not title_el:
+                return None
+            found_title = re.sub(r"\s+", " ", title_el.get_text()).strip()
+            if not found_title:
+                return None
 
-        cards = (
-            soup.select("article.item")
-            or soup.select(".movies-list article")
-            or soup.select("article")
-            or soup.select(".item")
-        )
+            img_el = soup.select_one(".poster img, .thumb img, article img, img.poster")
+            poster = ""
+            if img_el:
+                poster = img_el.get("src") or img_el.get("data-src", "")
+                if poster.startswith("//"):
+                    poster = "https:" + poster
+
+            desc_el = soup.select_one(".synopsis, .description, .entry-content p")
+            desc = (
+                re.sub(r"\s+", " ", desc_el.get_text()).strip()[:300] if desc_el else ""
+            )
+
+            score_el = soup.select_one(".imdb, .rating, .score")
+            score = _extract_rating(score_el.get_text() if score_el else "")
+
+            logger.info(f"LK21 direct URL hit: {url} → {found_title}")
+            return {
+                "subjectId": f"lk21_{abs(hash(url)) % 10**10}",
+                "title": found_title,
+                "description": desc,
+                "releaseDate": f"{year}-01-01" if year else "2000-01-01",
+                "duration": 0,
+                "genre": "Movie",
+                "countryName": "",
+                "imdbRatingValue": score,
+                "subjectType": 1,
+                "detailPath": "",
+                "corner": "",
+                "appointmentCnt": 0,
+                "appointmentDate": "",
+                "stafflist": None,
+                "subtitles": "id",
+                "hasResource": True,
+                "source": "lk21",
+                "sourceUrl": url,
+                "sourceName": "LK21",
+                "cover": {
+                    "url": poster,
+                    "thumbnail": poster,
+                    "width": 0,
+                    "height": 0,
+                    "size": 0,
+                    "format": "",
+                    "blurHash": "",
+                    "avgHueLight": "",
+                    "avgHueDark": "",
+                    "id": "0",
+                },
+            }
+    except Exception as e:
+        logger.debug(f"Direct URL miss {url}: {e}")
+    return None
+
+
+async def search_lk21_movies(query: str, max_results: int = 20) -> list:
+    """Search LK21, return movies only (no series). Also tries page 2."""
+    # Fetch page 1 and page 2 in parallel
+    url1 = f"{LK21_URL}/?s={quote_plus(query)}"
+    url2 = f"{LK21_URL}/page/2/?s={quote_plus(query)}"
+    results = []
+    all_html = []
+    try:
+        async with _client() as client:
+            r1, r2 = await asyncio.gather(
+                client.get(url1),
+                client.get(url2),
+                return_exceptions=True,
+            )
+        for r in [r1, r2]:
+            if isinstance(r, Exception):
+                continue
+            if r.status_code == 200:
+                all_html.append(r.text)
+
+        if not all_html:
+            return []
+
+        # Also try direct URL for query as a title (e.g. "battleship 2012")
+        year_match = re.search(r"(19|20)\d{2}", query)
+        year = year_match.group(0) if year_match else ""
+        title_part = re.sub(r"(19|20)\d{2}", "", query).strip()
+        direct_task = _try_direct_url(title_part or query, year)
+
+        soup_pages = [BeautifulSoup(h, "html.parser") for h in all_html]
+
+        cards = []
+        for soup in soup_pages:
+            page_cards = (
+                soup.select("article.item")
+                or soup.select(".movies-list article")
+                or soup.select("article")
+                or soup.select(".item")
+            )
+            cards.extend(page_cards)
 
         series_keywords = [
             "season",
@@ -162,6 +267,13 @@ async def search_lk21_movies(query: str, max_results: int = 20) -> list:
             except Exception as card_err:
                 logger.debug(f"Card parse error: {card_err}")
                 continue
+
+        # Try direct URL lookup in parallel
+        direct = await direct_task
+        if direct:
+            existing = {r["title"].lower() for r in results}
+            if direct["title"].lower() not in existing:
+                results.insert(0, direct)  # put at top
 
         logger.info(f"LK21 search '{query}': {len(results)} movies")
     except Exception as e:
