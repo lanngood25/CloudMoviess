@@ -62,7 +62,7 @@ async def search_lk21_movies(query: str, max_results: int = 20) -> list:
             r = await client.get(url)
             if r.status_code != 200:
                 return []
-            soup = BeautifulSoup(r.text, "lxml")
+            soup = BeautifulSoup(r.text, "html.parser")
 
         cards = (
             soup.select("article.item")
@@ -181,7 +181,7 @@ async def extract_lk21_stream(page_url: str) -> dict:
             r = await client.get(page_url)
             if r.status_code != 200:
                 return {"streams": [], "captions": []}
-            soup = BeautifulSoup(r.text, "lxml")
+            soup = BeautifulSoup(r.text, "html.parser")
             html = r.text
 
         # 1. Direct mp4/m3u8 in page source
