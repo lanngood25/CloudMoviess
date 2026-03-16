@@ -3225,19 +3225,9 @@
 
           // LK21 results — deduplicate by normalized title against MovieBox
           const mbTitles = new Set(mbItems.map(it => it.title.toLowerCase().trim()));
-          const allLk21 = lk21Result.items || [];
-          // Debug
-          console.log('[LK21] raw result:', lk21Result);
-          console.log('[LK21] items count:', allLk21.length);
-          console.log('[LK21] mbTitles:', [...mbTitles]);
-          const lk21Items = allLk21.filter(it => {
-            const t = it.title.toLowerCase().trim();
-            const blocked = mbTitles.has(t);
-            if (blocked) console.log('[LK21] filtered out (dup):', it.title);
-            return !blocked;
-          });
-          console.log('[LK21] after filter:', lk21Items.length, lk21Items.map(i => i.title));
-
+          const lk21Items = (lk21Result.items || []).filter(it =>
+            !mbTitles.has(it.title.toLowerCase().trim())
+          );
           items = [...mbItems, ...lk21Items];
         }
 
@@ -4115,78 +4105,28 @@
       $('lk21-modal-title').textContent = item.title;
       $('lk21-modal-src').textContent = item.releaseDate?.slice(0, 4) || '';
       $('lk21-ext-link').href = item.sourceUrl || '#';
-      $('lk21-loading').style.display = 'flex';
-      $('lk21-load-txt').textContent = 'Fetching stream from LK21…';
-      $('lk21-src-select').innerHTML = '';
-      const vid = $('lk21-vid');
-      if (_lk21Hls) { _lk21Hls.destroy(); _lk21Hls = null; }
-      vid.src = '';
 
-      try {
-        const res = await fetch(`/api/lk21/stream?url=${encodeURIComponent(item.sourceUrl)}`);
-        const data = await res.json();
-        _lk21Streams = data.streams || [];
-
-        if (!_lk21Streams.length) {
-          $('lk21-load-txt').textContent = '❌ Stream tidak ditemukan. Coba buka di LK21 langsung.';
-          return;
-        }
-
-        // Populate select
-        const sel = $('lk21-src-select');
-        _lk21Streams.forEach((s, i) => {
-          const opt = document.createElement('option');
-          opt.value = i;
-          opt.textContent = `${s.label || s.resolution || 'HD'} (${s.source || 'stream'})`;
-          sel.appendChild(opt);
-        });
-
-        // Play best stream
-        playLK21Stream(0);
-      } catch (e) {
-        $('lk21-load-txt').textContent = '❌ Gagal memuat stream. Coba buka di LK21 langsung.';
-        console.error('LK21 stream error:', e);
-      }
+      // LK21 uses P2P/WebRTC streaming — embed their iframe directly
+      const wrap = $('lk21-video-wrap');
+      wrap.innerHTML = `
+    <iframe
+      src="${item.sourceUrl || '#'}"
+      style="width:100%;height:100%;border:none;display:block"
+      allowfullscreen
+      allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+      scrolling="no"
+    ></iframe>`;
     }
 
-    function playLK21Stream(idx) {
-      const s = _lk21Streams[idx];
-      if (!s) return;
-      const vid = $('lk21-vid');
-      const url = s.proxy_url || s.url;
-
-      if (_lk21Hls) { _lk21Hls.destroy(); _lk21Hls = null; }
-
-      const isHLS = url.includes('.m3u8') || url.includes('m3u8');
-      $('lk21-loading').style.display = 'flex';
-      $('lk21-load-txt').textContent = 'Buffering…';
-
-      if (isHLS && Hls.isSupported()) {
-        _lk21Hls = new Hls({ enableWorker: false });
-        _lk21Hls.loadSource(url);
-        _lk21Hls.attachMedia(vid);
-        _lk21Hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          $('lk21-loading').style.display = 'none';
-          vid.play().catch(() => { });
-        });
-        _lk21Hls.on(Hls.Events.ERROR, (_, d) => {
-          if (d.fatal) $('lk21-load-txt').textContent = '❌ Stream error. Coba source lain.';
-        });
-      } else {
-        vid.src = url;
-        vid.oncanplay = () => { $('lk21-loading').style.display = 'none'; vid.play().catch(() => { }); };
-        vid.onerror = () => { $('lk21-load-txt').textContent = '❌ Stream tidak bisa diputar. Coba source lain.'; };
-        vid.load();
-      }
-    }
-
-    function switchLK21Stream(idx) { playLK21Stream(parseInt(idx)); }
+    function playLK21Stream() { }
+    function switchLK21Stream() { }
 
     function closeLK21Modal() {
       $('lk21-modal').classList.remove('open');
-      const vid = $('lk21-vid');
-      vid.pause(); vid.src = '';
-      if (_lk21Hls) { _lk21Hls.destroy(); _lk21Hls = null; }
+      // Clear iframe to stop video/audio
+      const wrap = $('lk21-video-wrap');
+      if (wrap) wrap.innerHTML = '';
     }
 
     /* ───── BOOT ───── */
@@ -4304,17 +4244,10 @@
           </svg>
         </button>
       </div>
-      <div class="lk21-video-wrap">
-        <video id="lk21-vid" controls playsinline crossorigin="anonymous"></video>
-        <div class="lk21-loading" id="lk21-loading">
-          <div class="spin"></div>
-          <div class="spin-lbl" id="lk21-load-txt">Fetching stream from LK21…</div>
-        </div>
+      <div class="lk21-video-wrap" id="lk21-video-wrap">
+        <!-- iframe injected by showLK21Player() -->
       </div>
       <div class="lk21-options">
-        <label>Stream Source</label>
-        <select class="opt-select" id="lk21-src-select" onchange="switchLK21Stream(this.value)"
-          style="min-width:160px"></select>
         <div class="spacer"></div>
         <a id="lk21-ext-link" href="#" target="_blank" class="btn-ghost"
           style="padding:6px 14px;font-size:.8rem;text-decoration:none">
