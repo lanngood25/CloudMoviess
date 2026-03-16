@@ -4107,30 +4107,32 @@
       $('lk21-ext-link').href = item.sourceUrl || '#';
 
       const wrap = $('lk21-video-wrap');
-      wrap.innerHTML = '<div class="lk21-loading"><div class="spin"></div><span class="spin-lbl">Mengambil player…</span></div>';
 
-      try {
-        // Get playeriframe URL from backend (not the LK21 page itself which blocks iframes)
-        const res = await fetch(`/api/lk21/stream?url=${encodeURIComponent(item.sourceUrl)}`);
-        const data = await res.json();
-        const embedUrl = data.embed_url;
+      // Use embedUrl stored in item (extracted during search), or fetch it
+      let embedUrl = item.embedUrl || null;
 
-        if (embedUrl) {
-          wrap.innerHTML = `<iframe
-        src="${embedUrl}"
-        style="width:100%;height:100%;border:none;display:block"
-        allowfullscreen
-        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-        scrolling="no"
-      ></iframe>`;
-        } else {
-          wrap.innerHTML = `<div class="lk21-loading">
-        <div style="font-size:2rem">😕</div>
-        <div class="spin-lbl">Player tidak tersedia. Gunakan tombol "Buka di LK21".</div>
-      </div>`;
-        }
-      } catch (e) {
-        wrap.innerHTML = `<div class="lk21-loading"><div class="spin-lbl">❌ Gagal load player.</div></div>`;
+      if (!embedUrl) {
+        wrap.innerHTML = '<div class="lk21-loading"><div class="spin"></div><span class="spin-lbl">Mengambil player…</span></div>';
+        try {
+          const res = await fetch(`/api/lk21/stream?url=${encodeURIComponent(item.sourceUrl)}`);
+          const data = await res.json();
+          embedUrl = data.embed_url;
+        } catch (e) { }
+      }
+
+      if (embedUrl) {
+        wrap.innerHTML = `<iframe
+      src="${embedUrl}"
+      style="width:100%;height:100%;border:none;display:block"
+      allowfullscreen
+      allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+      scrolling="no"
+    ></iframe>`;
+      } else {
+        wrap.innerHTML = `<div class="lk21-loading">
+      <div style="font-size:2.5rem">😕</div>
+      <div class="spin-lbl" style="margin-top:8px">Player tidak tersedia langsung.<br>Gunakan tombol <b>Buka di LK21</b> di bawah.</div>
+    </div>`;
       }
     }
 

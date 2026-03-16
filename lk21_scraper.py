@@ -158,7 +158,19 @@ async def _fetch_lk21_page(url: str) -> Optional[dict]:
                 re.sub(r"\s+", " ", desc_el.get_text()).strip()[:300] if desc_el else ""
             )
 
-            logger.info(f"LK21 direct hit: {url} → {clean} ({page_year})")
+            # Also extract playeriframe embed URL
+            embed_url = None
+            for iframe in soup.select("iframe[src]"):
+                src = iframe.get("src", "")
+                if "playeriframe" in src or "/p2p/" in src:
+                    embed_url = src if src.startswith("http") else f"https:{src}"
+                    break
+            if not embed_url:
+                for tag in soup.find_all(src=True):
+                    s = tag.get("src", "")
+                    if "playeriframe" in s:
+                        embed_url = s if s.startswith("http") else "https:" + s
+                        break
             return {
                 "subjectId": f"lk21_{abs(hash(url)) % 10**10}",
                 "title": clean,
@@ -178,6 +190,7 @@ async def _fetch_lk21_page(url: str) -> Optional[dict]:
                 "hasResource": True,
                 "source": "lk21",
                 "sourceUrl": url,
+                "embedUrl": embed_url,
                 "sourceName": "LK21",
                 "cover": {
                     "url": poster,
