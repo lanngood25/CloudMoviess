@@ -216,12 +216,35 @@ async def _try_direct_url(title: str, year: str) -> Optional[dict]:
     return await _fetch_lk21_page(url_bare)
 
 
+def _clean_title_for_search(title: str) -> str:
+    """Remove Indonesian localization suffixes from title for TMDB search."""
+    clean = title
+    for suffix in [
+        " sub indo",
+        " subtitle indonesia",
+        " sub indonesia",
+        " bahasa indonesia",
+        " full movie",
+        " online",
+        " nonton",
+        " streaming",
+        " bluray",
+        " blu-ray",
+        " hdcam",
+        " webrip",
+    ]:
+        if clean.lower().endswith(suffix):
+            clean = clean[: -len(suffix)].strip()
+    return clean.strip()
+
+
 async def _get_tmdb_poster(title: str, year: str = "") -> str:
-    """Fetch poster URL from TMDB free search (no API key needed via embed)."""
+    """Fetch poster URL from TMDB."""
     try:
-        query = quote_plus(title)
+        # Clean title before searching
+        clean = _clean_title_for_search(title)
+        query = quote_plus(clean)
         yr_param = f"&year={year}" if year else ""
-        # Use TMDB's public API - free tier, no key needed for basic search
         url = f"https://api.themoviedb.org/3/search/movie?api_key=8265bd1679663a7ea12ac168da84d2e8&query={query}{yr_param}&language=id-ID"
         async with httpx.AsyncClient(timeout=8) as c:
             r = await c.get(url)
@@ -232,6 +255,17 @@ async def _get_tmdb_poster(title: str, year: str = "") -> str:
                     path = results[0].get("poster_path", "")
                     if path:
                         return f"https://image.tmdb.org/t/p/w500{path}"
+                # If no results with year, try without year
+                if year and not results:
+                    url2 = f"https://api.themoviedb.org/3/search/movie?api_key=8265bd1679663a7ea12ac168da84d2e8&query={query}&language=id-ID"
+                    r2 = await c.get(url2)
+                    if r2.status_code == 200:
+                        data2 = r2.json()
+                        results2 = data2.get("results", [])
+                        if results2:
+                            path = results2[0].get("poster_path", "")
+                            if path:
+                                return f"https://image.tmdb.org/t/p/w500{path}"
     except Exception as e:
         logger.debug(f"TMDB poster error: {e}")
     return ""
@@ -614,7 +648,7 @@ async def _resolve_playeriframe(url: str, referer: str) -> list:
 
             # JS file/src keys
             js_found = re.findall(
-                r'(?:file|src|source|url)\s*[=:]\s*["\']( https?://[^"\']+)["\']', html
+                r'(?:file|src|source|url)\s*[=:]\s*["\'](https?://[^"\']+)["\']', html
             )
             for u in dict.fromkeys(js_found):
                 u = u.strip()
@@ -631,7 +665,7 @@ async def _resolve_playeriframe(url: str, referer: str) -> list:
                         )
 
             # Nested iframes
-            nested = re.findall(r'<iframe[^>]+src=["\']( https?://[^"\']+)["\']', html)
+            nested = re.findall(r'<iframe[^>]+src=["\'](https?://[^"\']+)["\']', html)
             for ni in nested[:2]:
                 ni = ni.strip()
                 if ni and ni != url:
