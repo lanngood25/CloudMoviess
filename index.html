@@ -2135,6 +2135,336 @@
       font-size: .8rem;
       color: var(--text3);
     }
+
+    /* ── VIDEO LOADING OVERLAY ── */
+    #vid-loader {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      background: linear-gradient(135deg, #06060f 0%, #0f0f20 50%, #06060f 100%);
+      z-index: 10;
+      transition: opacity .4s ease;
+    }
+
+    #vid-loader.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .film-strip {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 36px;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .film-strip.top {
+      top: 0
+    }
+
+    .film-strip.bottom {
+      bottom: 0
+    }
+
+    .film-hole-row {
+      display: flex;
+      animation: filmScroll 1.2s linear infinite;
+      white-space: nowrap;
+    }
+
+    .film-strip.bottom .film-hole-row {
+      animation-direction: reverse;
+    }
+
+    @keyframes filmScroll {
+      from {
+        transform: translateX(0)
+      }
+
+      to {
+        transform: translateX(-120px)
+      }
+    }
+
+    .film-cell {
+      width: 60px;
+      height: 36px;
+      flex-shrink: 0;
+      background: #111122;
+      border-right: 2px solid #0a0a18;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .film-perf {
+      width: 10px;
+      height: 18px;
+      border-radius: 3px;
+      background: #06060f;
+      border: 1.5px solid #2a2a45;
+    }
+
+    .loader-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .loader-logo {
+      font-family: 'Cinzel', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: rgba(255, 255, 255, .15);
+      animation: logoPulse 2s ease-in-out infinite;
+    }
+
+    .loader-logo span {
+      color: rgba(229, 9, 20, .5);
+    }
+
+    @keyframes logoPulse {
+
+      0%,
+      100% {
+        opacity: .4;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.03)
+      }
+    }
+
+    .ring-wrap {
+      position: relative;
+      width: 72px;
+      height: 72px;
+    }
+
+    .ring-wrap svg {
+      transform: rotate(-90deg);
+    }
+
+    .ring-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, .06);
+      stroke-width: 3;
+    }
+
+    .ring-fill {
+      fill: none;
+      stroke: var(--red);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: ringFill 1.8s ease-in-out infinite;
+      filter: drop-shadow(0 0 6px rgba(229, 9, 20, .7));
+    }
+
+    @keyframes ringFill {
+      0% {
+        stroke-dashoffset: 200;
+        opacity: 1
+      }
+
+      70% {
+        stroke-dashoffset: 0;
+        opacity: 1
+      }
+
+      100% {
+        stroke-dashoffset: 0;
+        opacity: 0
+      }
+    }
+
+    .ring-play {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--red);
+      opacity: .6;
+      animation: logoPulse 1.8s ease-in-out infinite;
+    }
+
+    .loader-bar-wrap {
+      width: 180px;
+      height: 2px;
+      border-radius: 1px;
+      background: rgba(255, 255, 255, .06);
+      overflow: hidden;
+    }
+
+    .loader-bar {
+      height: 100%;
+      border-radius: 1px;
+      background: linear-gradient(to right, transparent, var(--red), transparent);
+      animation: barSlide 1.4s ease-in-out infinite;
+    }
+
+    @keyframes barSlide {
+      0% {
+        transform: translateX(-100%);
+        width: 60%
+      }
+
+      100% {
+        transform: translateX(200%);
+        width: 60%
+      }
+    }
+
+    .loader-txt {
+      font-size: .78rem;
+      color: var(--text3);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 600;
+      animation: logoPulse 1.4s ease-in-out infinite;
+    }
+
+    .loader-scan {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .08) 2px, rgba(0, 0, 0, .08) 4px);
+    }
+
+    /* ── EPISODE SELECTOR ── */
+    #ep-selector {
+      padding: 0 60px 32px;
+      display: none;
+    }
+
+    #ep-selector.show {
+      display: block;
+    }
+
+    .ep-sel-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: .5px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ep-sel-title::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 22px;
+      border-radius: 2px;
+      background: var(--red);
+    }
+
+    .season-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .stab {
+      padding: 6px 18px;
+      border-radius: 50px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-size: .84rem;
+      font-weight: 600;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .stab:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .stab.on {
+      background: var(--red-dim);
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .ep-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+
+    .ep-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .ep-card:hover {
+      border-color: var(--red);
+      background: rgba(229, 9, 20, .07);
+      transform: translateY(-1px);
+    }
+
+    .ep-card.playing {
+      border-color: var(--red);
+      background: var(--red-dim);
+    }
+
+    .ep-num {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, var(--red), #600);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: .85rem;
+    }
+
+    .ep-card.playing .ep-num {
+      background: #fff;
+      color: var(--red);
+    }
+
+    .ep-info .ep-label {
+      font-size: .82rem;
+      font-weight: 600;
+    }
+
+    .ep-info .ep-sub {
+      font-size: .72rem;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    @media(max-width:768px) {
+      #ep-selector {
+        padding: 0 16px 28px;
+      }
+    }
   </style>
 </head>
 
@@ -2348,10 +2678,93 @@
       </div>
     </div>
 
+    <!-- Episode Selector (TV Series only) -->
+    <div id="ep-selector">
+      <div class="ep-sel-title">Select Episode</div>
+      <div class="season-tabs" id="season-tabs"></div>
+      <div class="ep-grid" id="ep-grid"></div>
+    </div>
+
     <!-- Player -->
     <div class="player-sec" id="player-sec" style="display:none">
       <div class="player-wrap" id="p-wrap">
         <div class="skip-overlay left" id="skip-left">
+          <!-- Loading Overlay -->
+          <div id="vid-loader">
+            <div class="loader-scan"></div>
+            <div class="film-strip top">
+              <div class="film-hole-row">
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+              </div>
+            </div>
+            <div class="loader-center">
+              <div class="loader-logo">Cloud<span>Movies</span></div>
+              <div class="ring-wrap">
+                <svg width="72" height="72" viewBox="0 0 72 72">
+                  <circle class="ring-track" cx="36" cy="36" r="32" />
+                  <circle class="ring-fill" cx="36" cy="36" r="32" />
+                </svg>
+                <div class="ring-play"><svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M5 3l14 9-14 9V3z" />
+                  </svg></div>
+              </div>
+              <div class="loader-bar-wrap">
+                <div class="loader-bar"></div>
+              </div>
+              <div class="loader-txt" id="loader-txt">Connecting stream…</div>
+            </div>
+            <div class="film-strip bottom">
+              <div class="film-hole-row">
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+                <div class="film-cell">
+                  <div class="film-perf"></div>
+                  <div class="film-perf"></div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="skip-ripple">
             <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
@@ -2417,14 +2830,18 @@
       <div class="player-opts" id="p-opts">
         <div class="opt-group">
           <label>Resolution</label>
-          <div class="opt-chips" id="res-chips"><span class="ochip">Auto</span></div>
+          <select class="opt-select" id="res-select" onchange="onResChange(this)">
+            <option value="">Auto</option>
+          </select>
         </div>
         <div class="opt-group">
           <label>Subtitles</label>
-          <div class="opt-chips" id="sub-chips">
-            <span class="ochip on" onclick="subOff(this)">Off</span>
-          </div>
+          <select class="opt-select" id="sub-select" onchange="onSubChange(this)">
+            <option value="">Off</option>
+          </select>
         </div>
+        <div style="display:none" id="res-chips"></div>
+        <div style="display:none" id="sub-chips"></div>
       </div>
     </div>
 
@@ -2474,6 +2891,8 @@
 
     /* ───── STATE ───── */
     let S = {
+      seasonCache: {},
+      currentSe: 1, currentEp: 1,
       heroItems: [], heroIdx: 0,
       item: null, streamData: null,
       subCues: [], subLang: null,
@@ -2715,7 +3134,17 @@
       $('player-sec').style.display = 'none';
       $('dl-grid').innerHTML = '<div class="spin-wrap"><div class="spin"></div></div>';
       loadCmts(); loadDL(item);
-      if (autoPlay) setTimeout(startPlay, 300);
+      // TV Series: show episode selector
+      if (item.subjectType === 2) {
+        $('ep-selector').classList.add('show');
+        S.currentSe = 1; S.currentEp = 1;
+        S.seasonCache = S.seasonCache || {};
+        loadEpisodes(item, 1);
+        if (autoPlay) setTimeout(() => playEpisode(1, 1), 300);
+      } else {
+        $('ep-selector').classList.remove('show');
+        if (autoPlay) setTimeout(startPlay, 300);
+      }
     }
 
     /* ───── DOWNLOAD ───── */
@@ -2756,59 +3185,117 @@
     /* ───── PLAYER ───── */
     const vid = $('vid');
 
-    async function startPlay() {
+    async function startPlay(se = 0, ep = 0) {
       const item = S.item; if (!item) return;
+
+      // TV Series: scroll to episode selector if no ep given
+      if (item.subjectType === 2 && !se) {
+        $('ep-selector').classList.add('show');
+        $('ep-selector').scrollIntoView({ behavior: 'smooth' });
+        toast('Select an episode to watch 📺');
+        return;
+      }
+
       $('player-sec').style.display = 'block';
       $('player-sec').scrollIntoView({ behavior: 'smooth' });
-      stopHls();
-      $('res-chips').innerHTML = '<span class="ochip">Loading…</span>';
-      $('sub-chips').innerHTML = '<span class="ochip on" onclick="subOff(this)">Off</span>';
+      stopHls(); showLoader('Connecting stream…'); cycleLoader();
+      if ($('res-select')) $('res-select').innerHTML = '<option value="">Loading…</option>';
+      if ($('sub-select')) $('sub-select').innerHTML = '<option value="">Off</option>';
       try {
         const st = item.subjectType || 1;
-        const d = await api(`/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=${st}`);
+        const seParam = st === 2 ? (se || 1) : 0;
+        const epParam = st === 2 ? (ep || 1) : 0;
+        const d = await api(`/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=${st}&se=${seParam}&ep=${epParam}`);
         S.streamData = d; renderOpts(d);
         const streams = (d.streams || []).sort((a, b) => (b.resolution || 0) - (a.resolution || 0));
         if (streams.length) playUrl(streams[0].url, streams[0].resolution);
         else if (d.hls?.length) playUrl(d.hls[0].url, 'HLS');
-        else showModal('Watch on MovieBox', 'No stream available in browser.', `https://h5.aoneroom.com/movies/${item.detailPath}?id=${item.subjectId}`);
+        else { stopLoader(); hideLoader(); showModal('Watch on MovieBox', 'No stream available in browser.', `https://h5.aoneroom.com/movies/${item.detailPath}?id=${item.subjectId}`); }
       } catch (e) {
+        stopLoader(); hideLoader();
         showModal('Watch on MovieBox', 'Open MovieBox to stream this title.', `https://h5.aoneroom.com/movies/${item.detailPath}?id=${item.subjectId}`);
       }
     }
-
     function renderOpts(d) {
-      const rc = $('res-chips'), sc = $('sub-chips');
-      rc.innerHTML = '';
+      S.streamData = d;
       const streams = (d.streams || []).sort((a, b) => (b.resolution || 0) - (a.resolution || 0));
-      streams.forEach((s, i) => {
-        const c = document.createElement('span'); c.className = 'ochip' + (i === 0 ? ' on' : '');
-        c.textContent = s.resolution ? s.resolution + 'p' : 'HD';
-        c.onclick = () => { document.querySelectorAll('#res-chips .ochip').forEach(x => x.classList.remove('on')); c.classList.add('on'); playUrl(s.url, s.resolution); };
-        rc.appendChild(c);
-      });
-      (d.hls || []).forEach(h => {
-        const c = document.createElement('span'); c.className = 'ochip'; c.textContent = 'HLS';
-        c.onclick = () => { document.querySelectorAll('#res-chips .ochip').forEach(x => x.classList.remove('on')); c.classList.add('on'); playUrl(h.url, 'HLS'); };
-        rc.appendChild(c);
-      });
-      if (!rc.children.length) rc.innerHTML = '<span class="ochip">Auto</span>';
 
-      sc.innerHTML = '<span class="ochip on" onclick="subOff(this)">Off</span>';
-      (d.captions || []).forEach(cap => {
-        const c = document.createElement('span'); c.className = 'ochip'; c.textContent = cap.lanName || cap.lan;
-        c.onclick = () => loadSub(c, cap); sc.appendChild(c);
+      // Resolution select
+      const rs = $('res-select'); rs.innerHTML = '';
+      if (!streams.length && !(d.hls || []).length) {
+        rs.innerHTML = '<option value="">Auto</option>';
+      } else {
+        streams.forEach((s, i) => {
+          const opt = document.createElement('option');
+          opt.value = i; opt.textContent = s.resolution ? s.resolution + 'p' : 'HD';
+          rs.appendChild(opt);
+        });
+        (d.hls || []).forEach((h, i) => {
+          const opt = document.createElement('option');
+          opt.value = 'hls_' + i; opt.textContent = h.resolution ? 'HLS ' + h.resolution + 'p' : 'HLS';
+          rs.appendChild(opt);
+        });
+      }
+
+      // Subtitle select  
+      const ss = $('sub-select'); ss.innerHTML = '<option value="">Off</option>';
+      const caps = [...(d.captions || [])].sort((a, b) => {
+        const p = l => { l = (l || '').toLowerCase(); if (l === 'id' || l.includes('indo')) return 0; if (l === 'en' || l.includes('engl')) return 1; return 2; };
+        return p(a.lan) - p(b.lan);
+      });
+      caps.forEach((cap, i) => {
+        const opt = document.createElement('option'); opt.value = i;
+        const flag = cap.lan === 'id' || cap.lan === 'Indonesian' ? '🇮🇩 ' : cap.lan === 'en' || cap.lan === 'English' ? '🇺🇸 ' : '';
+        opt.textContent = flag + (cap.lanName || cap.lan);
+        ss.appendChild(opt);
       });
     }
 
+    function onResChange(sel) {
+      const val = sel.value; if (val === '') return;
+      const d = S.streamData; if (!d) return;
+      const streams = (d.streams || []).sort((a, b) => (b.resolution || 0) - (a.resolution || 0));
+      if (val.startsWith('hls_')) {
+        const h = (d.hls || [])[parseInt(val.replace('hls_', ''))];
+        if (h) playUrl(h.url, 'HLS');
+      } else {
+        const s = streams[parseInt(val)]; if (s) playUrl(s.url, s.resolution);
+      }
+    }
+
+    function onSubChange(sel) {
+      const val = sel.value;
+      if (!val) { S.subCues = []; S.subLang = null; $('sub-overlay').style.display = 'none'; return; }
+      const d = S.streamData; if (!d) return;
+      const caps = [...(d.captions || [])].sort((a, b) => {
+        const p = l => { l = (l || '').toLowerCase(); if (l === 'id' || l.includes('indo')) return 0; if (l === 'en' || l.includes('engl')) return 1; return 2; };
+        return p(a.lan) - p(b.lan);
+      });
+      const cap = caps[parseInt(val)]; if (cap) loadSub(null, cap);
+    }
+
+    function showLoader(txt) {
+      const l = $('vid-loader'); if (!l) return;
+      l.classList.remove('hidden');
+      if (txt) $('loader-txt').textContent = txt;
+    }
+    function hideLoader() { const l = $('vid-loader'); if (l) l.classList.add('hidden'); }
+    function cycleLoader() {
+      clearInterval(_loaderTimer); _loaderIdx = 0;
+      if ($('loader-txt')) $('loader-txt').textContent = LOADER_MSGS[0];
+      _loaderTimer = setInterval(() => { _loaderIdx = (_loaderIdx + 1) % LOADER_MSGS.length; if ($('loader-txt')) $('loader-txt').textContent = LOADER_MSGS[_loaderIdx]; }, 1400);
+    }
+    function stopLoader() { clearInterval(_loaderTimer); }
+
     function playUrl(url, res) {
       if (!url) { toast('Stream URL not available', 'err'); return; }
-      stopHls();
+      stopHls(); showLoader('Connecting stream…'); cycleLoader();
       const isHLS = url.includes('.m3u8') || url.includes('hls');
       if (isHLS && Hls.isSupported()) {
         hls = new Hls({ enableWorker: false });
         hls.loadSource(url); hls.attachMedia(vid);
         hls.on(Hls.Events.MANIFEST_PARSED, () => { vid.play().catch(() => { }); $('p-wrap').classList.remove('paused'); });
-        hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) toast('Stream error — try another resolution.', 'err'); });
+        hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) { stopLoader(); hideLoader(); toast('Stream error — try another resolution.', 'err'); } });
       } else if (isHLS && vid.canPlayType('application/vnd.apple.mpegurl')) {
         vid.src = url; vid.play().catch(() => { });
       } else {
@@ -2825,8 +3312,11 @@
       updateSub(vid.currentTime);
     });
     vid.addEventListener('loadedmetadata', () => { $('dt').textContent = ft(vid.duration); });
+    vid.addEventListener('canplay', () => { stopLoader(); hideLoader(); });
+    vid.addEventListener('playing', () => { stopLoader(); hideLoader(); $('play-ic').style.display = 'none'; $('pause-ic').style.display = ''; $('p-wrap').classList.remove('paused'); });
+    vid.addEventListener('waiting', () => { showLoader('Buffering…'); });
     vid.addEventListener('play', () => { $('play-ic').style.display = 'none'; $('pause-ic').style.display = ''; $('p-wrap').classList.remove('paused'); });
-    vid.addEventListener('pause', () => { $('play-ic').style.display = ''; $('pause-ic').style.display = 'none'; $('p-wrap').classList.add('paused'); });
+    vid.addEventListener('pause', () => { stopLoader(); hideLoader(); $('play-ic').style.display = ''; $('pause-ic').style.display = 'none'; $('p-wrap').classList.add('paused'); });
     // ── Auto-hide controls ──────────────────────────────────────────────────
     let _ctrlTimer;
     function showCtrls() {
@@ -2901,21 +3391,31 @@
 
     /* ───── SUBTITLES ───── */
     async function loadSub(chip, cap) {
-      document.querySelectorAll('#sub-chips .ochip').forEach(c => c.classList.remove('on'));
-      chip.classList.add('on');
+      if (chip) {
+        document.querySelectorAll('#sub-chips .ochip').forEach(c => c.classList.remove('on'));
+        chip.classList.add('on');
+        chip.textContent = '⏳';
+      }
       try {
-        chip.textContent = '…';
         const r = await fetch(`${API}/subtitle-proxy?url=${encodeURIComponent(cap.url)}`);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
         const txt = await r.text();
+        if (!txt.trim()) throw new Error('Empty file');
         S.subCues = parseSRT(txt);
         S.subLang = cap.lan;
-        chip.textContent = cap.lanName || cap.lan;
-        toast('Subtitles loaded: ' + (cap.lanName || cap.lan), 'ok');
-      } catch (e) { chip.textContent = cap.lanName || cap.lan; toast('Could not load subtitles', 'err'); }
+        if (chip) chip.textContent = cap.lanName || cap.lan;
+        toast('✅ Subtitles: ' + (cap.lanName || cap.lan), 'ok');
+      } catch (e) {
+        if (chip) chip.textContent = cap.lanName || cap.lan;
+        $('sub-select').value = '';
+        S.subCues = []; S.subLang = null;
+        $('sub-overlay').style.display = 'none';
+        toast('❌ Subtitle error: ' + e.message, 'err');
+      }
     }
     function subOff(chip) {
       document.querySelectorAll('#sub-chips .ochip').forEach(c => c.classList.remove('on'));
-      chip.classList.add('on'); S.subCues = []; S.subLang = null;
+      if (chip) chip.classList.add('on'); S.subCues = []; S.subLang = null;
       $('sub-overlay').style.display = 'none';
     }
     function parseSRT(txt) {
@@ -3053,37 +3553,57 @@
     async function browseCategory(type) {
       S.query = ''; S.qType = type;
       view('search');
-      $('s-head').textContent = type === 1 ? 'Movies' : 'TV Series';
+      $('s-head').textContent = type === 1 ? 'Movies' : type === 2 ? 'TV Series' : 'All Content';
       $('s-sub').textContent = 'Loading…';
       $('s-grid').innerHTML = '<div class="spin-wrap" style="grid-column:1/-1"><div class="spin"></div><span class="spin-lbl">Loading…</span></div>';
       document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', +c.dataset.t === type));
 
-      const keywords = type === 1
-        ? ['action', 'drama', 'comedy', 'thriller', 'horror', 'romance', 'adventure', 'sci-fi']
-        : ['series', 'drama', 'comedy', 'action', 'thriller', 'fantasy', 'crime', 'mystery'];
+      // Fetch multiple pages directly with subject_type filter
+      const grid = $('s-grid'); grid.innerHTML = '';
+      let total = 0; const seen = new Set();
 
-      const grid = $('s-grid');
-      grid.innerHTML = '';
-      let total = 0;
-      const seen = new Set();
-
-      for (const kw of keywords) {
+      // Fetch by popular keywords
+      const kws = type === 1
+        ? ['action', 'drama', 'comedy', 'thriller', 'horror', 'romance', 'sci-fi', 'adventure']
+        : ['drama', 'comedy', 'action', 'crime', 'thriller', 'fantasy', 'mystery', 'romance'];
+      for (const kw of kws) {
         try {
           const r = await fetch(API + '/search', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keyword: kw, subject_type: type, page: 1, per_page: 24 }),
+            body: JSON.stringify({ keyword: kw, subject_type: type, page: 1, per_page: 24 })
           });
-          const data = await r.json();
-          (data.items || []).filter(it => !seen.has(it.subjectId)).forEach(it => {
+          const d = await r.json();
+          (d.items || []).filter(it => !seen.has(it.subjectId)).forEach(it => {
             seen.add(it.subjectId);
-            const c = mkCard(it, total * 20); c.style.width = ''; grid.appendChild(c);
-            total++;
+            const c = mkCard(it, total * 20); c.style.width = ''; grid.appendChild(c); total++;
           });
           $('s-sub').textContent = `${total} results found`;
         } catch { }
         if (total >= 200) break;
       }
+      // If still empty, try with keywords
+      if (!total) {
+        const kws = type === 1
+          ? ['action', 'drama', 'comedy', 'thriller', 'horror', 'romance', 'sci-fi', 'adventure']
+          : ['drama', 'comedy', 'action', 'crime', 'thriller', 'fantasy', 'mystery', 'romance'];
+        for (const kw of kws) {
+          try {
+            const r = await fetch(API + '/search', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keyword: kw, subject_type: type, page: 1, per_page: 24 })
+            });
+            const d = await r.json();
+            (d.items || []).filter(it => !seen.has(it.subjectId)).forEach(it => {
+              seen.add(it.subjectId);
+              const c = mkCard(it, total * 20); c.style.width = ''; grid.appendChild(c); total++;
+            });
+            $('s-sub').textContent = `${total} results found`;
+          } catch { }
+          if (total >= 150) break;
+        }
+      }
 
+      $('s-sub').textContent = `${total} results found`;
       if (!total) {
         grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><h3>No Results</h3><p>Try searching a keyword instead.</p></div>`;
       }
@@ -3197,6 +3717,107 @@
       f.src = ''; f.style.display = 'none';
       $('vidsrc-loading').style.display = 'flex';
       $('vidsrc-load-txt').textContent = 'Mencari film…';
+    }
+
+
+    /* ───── EPISODE SELECTOR ───── */
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    async function probeOne(url) {
+      try {
+        const r = await fetch(url);
+        if (r.status === 429) return false;
+        const d = await r.json();
+        return (d.streams || []).length > 0 || (d.hls || []).length > 0;
+      } catch { return false; }
+    }
+
+    async function loadEpisodes(item, season) {
+      S.currentSe = season;
+      const tabsEl = $('season-tabs'), gridEl = $('ep-grid');
+      tabsEl.innerHTML = '';
+      gridEl.innerHTML = '<div class="spin-wrap"><div class="spin"></div><span class="spin-lbl">Detecting seasons…</span></div>';
+      const cacheKey = item.subjectId;
+      if (!S.seasonCache[cacheKey]) {
+        const validSeasons = [];
+        let misses = 0;
+        for (let s = 1; s <= 8; s++) {
+          await sleep(s > 1 ? 500 : 0);
+          const url = `${API}/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=2&se=${s}&ep=1`;
+          const ok = await probeOne(url);
+          if (ok) { validSeasons.push(s); misses = 0; }
+          else { misses++; if (misses >= 2) break; }
+        }
+        S.seasonCache[cacheKey] = validSeasons.length ? validSeasons : [1];
+      }
+      const seasons = S.seasonCache[cacheKey];
+      tabsEl.innerHTML = '';
+      seasons.forEach(s => {
+        const tab = document.createElement('button');
+        tab.className = 'stab' + (s === season ? ' on' : '');
+        tab.textContent = `Season ${s}`;
+        tab.onclick = () => {
+          document.querySelectorAll('.stab').forEach(t => t.classList.remove('on'));
+          tab.classList.add('on');
+          loadEpisodeList(item, s);
+        };
+        tabsEl.appendChild(tab);
+      });
+      loadEpisodeList(item, season);
+    }
+
+    async function loadEpisodeList(item, season) {
+      S.currentSe = season;
+      const gridEl = $('ep-grid');
+      gridEl.innerHTML = '<div class="spin-wrap"><div class="spin"></div><span class="spin-lbl">Loading episodes…</span></div>';
+      const episodes = [];
+      let misses = 0;
+      for (let ep = 1; ep <= 30; ep++) {
+        await sleep(ep > 1 ? 400 : 0);
+        const url = `${API}/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=2&se=${season}&ep=${ep}`;
+        const ok = await probeOne(url);
+        if (ok) {
+          episodes.push(ep); misses = 0;
+          const card = document.createElement('div');
+          card.className = 'ep-card';
+          card.id = `ep-${season}-${ep}`;
+          card.innerHTML = `<div class="ep-num">${ep}</div><div class="ep-info"><div class="ep-label">Episode ${ep}</div><div class="ep-sub">Season ${season}</div></div>`;
+          card.onclick = () => playEpisode(season, ep);
+          if (ep === 1) gridEl.innerHTML = '';
+          gridEl.appendChild(card);
+        } else {
+          misses++;
+          if (misses >= 2) break;
+        }
+      }
+      if (!episodes.length) {
+        gridEl.innerHTML = '<div style="color:var(--text3);padding:16px;font-size:.9rem">No episodes found.</div>';
+        return;
+      }
+      loadDL(item);
+    }
+
+    async function playEpisode(season, ep) {
+      const item = S.item; if (!item) return;
+      S.currentSe = season; S.currentEp = ep;
+      document.querySelectorAll('.ep-card').forEach(c => c.classList.remove('playing'));
+      const card = $(`ep-${season}-${ep}`); if (card) card.classList.add('playing');
+      $('player-sec').style.display = 'block';
+      $('player-sec').scrollIntoView({ behavior: 'smooth' });
+      stopHls(); showLoader('Connecting stream…'); cycleLoader();
+      if ($('res-select')) $('res-select').innerHTML = '<option value="">Loading…</option>';
+      if ($('sub-select')) $('sub-select').innerHTML = '<option value="">Off</option>';
+      try {
+        const d = await api(`/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=2&se=${season}&ep=${ep}`);
+        S.streamData = d; renderOpts(d);
+        const streams = (d.streams || []).sort((a, b) => (b.resolution || 0) - (a.resolution || 0));
+        if (streams.length) playUrl(streams[0].url, streams[0].resolution);
+        else if (d.hls?.length) playUrl(d.hls[0].url, 'HLS');
+        else { stopLoader(); hideLoader(); showModal('Watch on MovieBox', `No stream for S${season}E${ep}.`, `https://h5.aoneroom.com/movies/${item.detailPath}`); }
+      } catch (e) {
+        stopLoader(); hideLoader();
+        showModal('Watch on MovieBox', 'Open MovieBox to stream this episode.', `https://h5.aoneroom.com/movies/${item.detailPath}`);
+      }
     }
 
     /* ───── BOOT ───── */
