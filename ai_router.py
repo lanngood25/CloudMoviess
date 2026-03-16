@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 CloudMovies — AI Assistant Backend (Groq)
 Endpoint: POST /api/ai/chat

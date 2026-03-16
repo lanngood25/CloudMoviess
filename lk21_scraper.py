@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 CloudMovies — LK21 Scraper (Movies Only)
 Search LK21 and extract stream URLs from movie pages.
