@@ -87,7 +87,6 @@ INDEX_HTML = os.path.join(BASE_DIR, "index.html")
 
 # Include AI router
 from ai_router import router as ai_router
-from lk21_scraper import search_lk21_movies, extract_lk21_stream
 
 app.include_router(ai_router)
 
@@ -162,42 +161,6 @@ async def search(body: SearchBody):
         return {"items": items_list(model.items), "pager": model.pager.model_dump()}
     except Exception as e:
         logger.error(f"search error: {e}")
-        raise HTTPException(500, str(e))
-
-
-@app.post("/api/search/fallback")
-async def search_fallback(body: SearchBody):
-    """Search LK21 movies when MovieBox has no results."""
-    try:
-        query = body.keyword.strip()
-        if not query:
-            raise HTTPException(400, "keyword required")
-        results = await search_lk21_movies(query, max_results=24)
-        return {"items": results, "source": "lk21", "total": len(results)}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"fallback search error: {e}")
-        raise HTTPException(500, str(e))
-
-
-@app.get("/api/lk21/stream")
-async def lk21_stream(url: str = Query(...)):
-    """
-    Extract direct video stream URL from LK21 movie page.
-    The 'url' param is the LK21 movie page URL.
-    Streams are routed through /api/video-proxy for CORS bypass.
-    """
-    try:
-        data = await extract_lk21_stream(url)
-        # Wrap stream URLs through video proxy
-        for s in data.get("streams", []):
-            raw = s["url"]
-            if raw:
-                s["proxy_url"] = f"/api/video-proxy?url={quote(raw, safe='')}"
-        return data
-    except Exception as e:
-        logger.error(f"lk21 stream error: {e}")
         raise HTTPException(500, str(e))
 
 
@@ -462,6 +425,67 @@ async def video_proxy(request: Request, url: str = Query(...)):
 
 
 # ── Subtitle Proxy ─────────────────────────────────────────────────────────────
+
+
+@app.get("/api/vidsrc")
+async def vidsrc_search(
+    title: str = Query(...), year: str = Query(""), type: str = Query("movie")
+):
+    """
+    Search TMDB for IMDb ID then return vidsrc.to embed URL.
+    type: 'movie' or 'tv'
+    """
+    try:
+        TMDB_KEY = "8265bd1679663a7ea12ac168da84d2e8"
+        search_type = "tv" if type == "tv" else "movie"
+        yr_param = f"&year={year}" if year else ""
+        search_url = f"https://api.themoviedb.org/3/search/{search_type}?api_key={TMDB_KEY}&query={title}{yr_param}&language=en-US"
+
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.get(search_url)
+            data = r.json()
+
+        results = data.get("results", [])
+        if not results:
+            raise HTTPException(404, "Not found on TMDB")
+
+        tmdb_id = results[0]["id"]
+
+        # Get IMDb ID from TMDB details
+        detail_url = f"https://api.themoviedb.org/3/{search_type}/{tmdb_id}/external_ids?api_key={TMDB_KEY}"
+        async with httpx.AsyncClient(timeout=10) as c:
+            r2 = await c.get(detail_url)
+            ext = r2.json()
+
+        imdb_id = ext.get("imdb_id", "")
+        if not imdb_id:
+            raise HTTPException(404, "No IMDb ID found")
+
+        # Build vidsrc embed URL
+        embed_type = "tv" if type == "tv" else "movie"
+        embed_url = f"https://vidsrc.to/embed/{embed_type}/{imdb_id}"
+
+        # Also get poster and title from TMDB
+        poster = results[0].get("poster_path", "")
+        poster_url = f"https://image.tmdb.org/t/p/w500{poster}" if poster else ""
+        title_result = results[0].get("title") or results[0].get("name", title)
+        release = (
+            results[0].get("release_date") or results[0].get("first_air_date", "")
+        )[:4]
+
+        logger.info(f"VidSrc: {title} → {imdb_id} → {embed_url}")
+        return {
+            "embed_url": embed_url,
+            "imdb_id": imdb_id,
+            "title": title_result,
+            "year": release,
+            "poster": poster_url,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"vidsrc error: {e}")
+        raise HTTPException(500, str(e))
 
 
 @app.get("/api/subtitle-proxy")
