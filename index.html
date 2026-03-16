@@ -4106,17 +4106,32 @@
       $('lk21-modal-src').textContent = item.releaseDate?.slice(0, 4) || '';
       $('lk21-ext-link').href = item.sourceUrl || '#';
 
-      // LK21 uses P2P/WebRTC streaming — embed their iframe directly
       const wrap = $('lk21-video-wrap');
-      wrap.innerHTML = `
-    <iframe
-      src="${item.sourceUrl || '#'}"
-      style="width:100%;height:100%;border:none;display:block"
-      allowfullscreen
-      allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-      scrolling="no"
-    ></iframe>`;
+      wrap.innerHTML = '<div class="lk21-loading"><div class="spin"></div><span class="spin-lbl">Mengambil player…</span></div>';
+
+      try {
+        // Get playeriframe URL from backend (not the LK21 page itself which blocks iframes)
+        const res = await fetch(`/api/lk21/stream?url=${encodeURIComponent(item.sourceUrl)}`);
+        const data = await res.json();
+        const embedUrl = data.embed_url;
+
+        if (embedUrl) {
+          wrap.innerHTML = `<iframe
+        src="${embedUrl}"
+        style="width:100%;height:100%;border:none;display:block"
+        allowfullscreen
+        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+        scrolling="no"
+      ></iframe>`;
+        } else {
+          wrap.innerHTML = `<div class="lk21-loading">
+        <div style="font-size:2rem">😕</div>
+        <div class="spin-lbl">Player tidak tersedia. Gunakan tombol "Buka di LK21".</div>
+      </div>`;
+        }
+      } catch (e) {
+        wrap.innerHTML = `<div class="lk21-loading"><div class="spin-lbl">❌ Gagal load player.</div></div>`;
+      }
     }
 
     function playLK21Stream() { }

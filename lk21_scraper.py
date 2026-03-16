@@ -454,15 +454,29 @@ async def search_lk21_movies(query: str, max_results: int = 20) -> list:
 
 
 async def extract_lk21_stream(page_url: str) -> dict:
-    """Visit LK21 movie page, find all embed/direct video URLs."""
+    """Visit LK21 movie page, extract playeriframe embed URL."""
     streams = []
+    embed_url = None
     try:
         async with _client(referer=LK21_URL) as client:
             r = await client.get(page_url)
             if r.status_code != 200:
-                return {"streams": [], "captions": []}
+                return {"streams": [], "embed_url": None, "captions": []}
             soup = BeautifulSoup(r.text, "html.parser")
             html = r.text
+
+            # Extract playeriframe URL first (most reliable for LK21)
+            iframe_els = soup.select("iframe[src]")
+            for iframe in iframe_els:
+                src = iframe.get("src", "")
+                if "playeriframe" in src or "p2p" in src or "playerx" in src:
+                    embed_url = src if src.startswith("http") else f"https:{src}"
+                    break
+            # Also check JS for iframe src
+            if not embed_url:
+                iframes_js = re.findall('https://playeriframe[^\\s"<>]+', html)
+                if iframes_js:
+                    embed_url = iframes_js[0]
 
         # 1. Direct mp4/m3u8 in page source
         direct = re.findall(r'https?://[^\s\'"<>]+\.(?:mp4|m3u8)[^\s\'"<>]*', html)
@@ -519,8 +533,10 @@ async def extract_lk21_stream(page_url: str) -> dict:
                 seen.add(s["url"])
                 unique.append(s)
 
-        logger.info(f"LK21 extract '{page_url}': {len(unique)} streams")
-        return {"streams": unique[:6], "captions": []}
+        logger.info(
+            f"LK21 extract '{page_url}': {len(unique)} streams, embed={embed_url}"
+        )
+        return {"streams": unique[:6], "embed_url": embed_url, "captions": []}
 
     except Exception as e:
         logger.error(f"LK21 extract error: {e}")
