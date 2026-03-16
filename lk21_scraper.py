@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 CloudMovies — LK21 Scraper (Movies Only)
 Search LK21 and extract stream URLs from movie pages.
@@ -54,6 +55,7 @@ def _extract_rating(text):
 
 # ── SEARCH ────────────────────────────────────────────────────────────────────
 
+
 def _make_slug(title: str, year: str = "") -> str:
     """Convert title to LK21 URL slug, e.g. 'Battleship 2012' → 'battleship-2012'"""
     slug = title.lower().strip()
@@ -76,7 +78,11 @@ async def _fetch_lk21_page(url: str) -> Optional[dict]:
             # Reject ONLY if it's homepage/search page (not a movie page)
             # LK21 puts brand in title like "Nonton Battleship (2012) Sub Indo di LK21"
             # so we CANNOT reject on "lk21" keyword
-            reject_homepage = ["streaming film gratis", "nonton film online", "layarkaca21 | nonton"]
+            reject_homepage = [
+                "streaming film gratis",
+                "nonton film online",
+                "layarkaca21 | nonton",
+            ]
             page_title_tag = soup.find("title")
             page_title_str = page_title_tag.get_text() if page_title_tag else ""
             if any(p in page_title_str.lower() for p in reject_homepage):
@@ -84,11 +90,11 @@ async def _fetch_lk21_page(url: str) -> Optional[dict]:
 
             # Try multiple title selectors — LK21 uses different themes
             title_el = (
-                soup.select_one("h1.entry-title") or
-                soup.select_one("h1.judul-film") or
-                soup.select_one(".film-title h1") or
-                soup.select_one(".gmr-title") or
-                soup.select_one("h1")
+                soup.select_one("h1.entry-title")
+                or soup.select_one("h1.judul-film")
+                or soup.select_one(".film-title h1")
+                or soup.select_one(".gmr-title")
+                or soup.select_one("h1")
             )
             if not title_el:
                 return None
@@ -100,11 +106,18 @@ async def _fetch_lk21_page(url: str) -> Optional[dict]:
             clean = raw_title
             for prefix in ["nonton ", "download ", "streaming "]:
                 if clean.lower().startswith(prefix):
-                    clean = clean[len(prefix):]
-            for suffix in [" sub indo", " subtitle indonesia", " full movie", " online",
-                           " di lk21", " di layarkaca21", " gratis"]:
+                    clean = clean[len(prefix) :]
+            for suffix in [
+                " sub indo",
+                " subtitle indonesia",
+                " full movie",
+                " online",
+                " di lk21",
+                " di layarkaca21",
+                " gratis",
+            ]:
                 if clean.lower().endswith(suffix):
-                    clean = clean[:-len(suffix)]
+                    clean = clean[: -len(suffix)]
             # Remove year in parentheses from title for display
             # but keep it for releaseDate extraction
             clean = clean.strip()
@@ -121,41 +134,63 @@ async def _fetch_lk21_page(url: str) -> Optional[dict]:
                 clean = re.sub(r"\s*\(\d{4}\)\s*", " ", clean).strip()
             if not page_year:
                 year_el = soup.select_one(".year, .gmr-movie-on, time, .released")
-                page_year = _extract_year(year_el.get_text() if year_el else "") or _extract_year(page_title_str)
+                page_year = _extract_year(
+                    year_el.get_text() if year_el else ""
+                ) or _extract_year(page_title_str)
 
             # Poster
-            img_el = (
-                soup.select_one(".poster img") or
-                soup.select_one(".thumb img") or
-                soup.select_one("img[class*=poster]") or
-                soup.select_one(".gmr-item-result img") or
-                soup.select_one("article img")
-            )
-            poster = ""
-            if img_el:
-                poster = img_el.get("src") or img_el.get("data-src", "")
-                if poster and poster.startswith("//"):
-                    poster = "https:" + poster
+            # Get poster from TMDB - most reliable source
+            poster = await _get_tmdb_poster(clean, page_year)
+            # Fallback to og:image if TMDB fails
+            if not poster:
+                og_img = soup.select_one('meta[property="og:image"]')
+                if og_img:
+                    poster = og_img.get("content", "")
 
-            score_el = soup.select_one(".imdb, .rating, [itemprop=ratingValue], .gmr-rating")
+            score_el = soup.select_one(
+                ".imdb, .rating, [itemprop=ratingValue], .gmr-rating"
+            )
             score = _extract_rating(score_el.get_text() if score_el else "")
-            desc_el = soup.select_one(".synopsis p, .entry-content p, [itemprop=description]")
-            desc = re.sub(r"\s+", " ", desc_el.get_text()).strip()[:300] if desc_el else ""
+            desc_el = soup.select_one(
+                ".synopsis p, .entry-content p, [itemprop=description]"
+            )
+            desc = (
+                re.sub(r"\s+", " ", desc_el.get_text()).strip()[:300] if desc_el else ""
+            )
 
             logger.info(f"LK21 direct hit: {url} → {clean} ({page_year})")
             return {
                 "subjectId": f"lk21_{abs(hash(url)) % 10**10}",
-                "title": clean, "description": desc,
+                "title": clean,
+                "description": desc,
                 "releaseDate": f"{page_year}-01-01" if page_year else "2000-01-01",
-                "duration": 0, "genre": "Movie", "countryName": "",
-                "imdbRatingValue": score, "subjectType": 1,
-                "detailPath": "", "corner": "", "appointmentCnt": 0,
-                "appointmentDate": "", "stafflist": None,
-                "subtitles": "id", "hasResource": True,
-                "source": "lk21", "sourceUrl": url, "sourceName": "LK21",
-                "cover": {"url": poster, "thumbnail": poster, "width": 0, "height": 0,
-                          "size": 0, "format": "", "blurHash": "",
-                          "avgHueLight": "", "avgHueDark": "", "id": "0"},
+                "duration": 0,
+                "genre": "Movie",
+                "countryName": "",
+                "imdbRatingValue": score,
+                "subjectType": 1,
+                "detailPath": "",
+                "corner": "",
+                "appointmentCnt": 0,
+                "appointmentDate": "",
+                "stafflist": None,
+                "subtitles": "id",
+                "hasResource": True,
+                "source": "lk21",
+                "sourceUrl": url,
+                "sourceName": "LK21",
+                "cover": {
+                    "url": poster,
+                    "thumbnail": poster,
+                    "width": 0,
+                    "height": 0,
+                    "size": 0,
+                    "format": "",
+                    "blurHash": "",
+                    "avgHueLight": "",
+                    "avgHueDark": "",
+                    "id": "0",
+                },
             }
     except Exception as e:
         logger.debug(f"LK21 page miss {url}: {e}")
@@ -180,6 +215,26 @@ async def _try_direct_url(title: str, year: str) -> Optional[dict]:
     url_bare = f"{LK21_URL}/{base_slug}"
     return await _fetch_lk21_page(url_bare)
 
+
+async def _get_tmdb_poster(title: str, year: str = "") -> str:
+    """Fetch poster URL from TMDB free search (no API key needed via embed)."""
+    try:
+        query = quote_plus(title)
+        yr_param = f"&year={year}" if year else ""
+        # Use TMDB's public API - free tier, no key needed for basic search
+        url = f"https://api.themoviedb.org/3/search/movie?api_key=8265bd1679663a7ea12ac168da84d2e8&query={query}{yr_param}&language=id-ID"
+        async with httpx.AsyncClient(timeout=8) as c:
+            r = await c.get(url)
+            if r.status_code == 200:
+                data = r.json()
+                results = data.get("results", [])
+                if results:
+                    path = results[0].get("poster_path", "")
+                    if path:
+                        return f"https://image.tmdb.org/t/p/w500{path}"
+    except Exception as e:
+        logger.debug(f"TMDB poster error: {e}")
+    return ""
 
 
 async def search_lk21_movies(query: str, max_results: int = 20) -> list:
@@ -216,23 +271,34 @@ async def search_lk21_movies(query: str, max_results: int = 20) -> list:
         if not year and query:
             # Try searching "query year" for common years (last 15 years)
             import datetime
+
             cur_year = datetime.datetime.now().year
             for y in range(cur_year, cur_year - 15, -1):
-                extra_search_urls.append(f"{LK21_URL}/?s={quote_plus(query + ' ' + str(y))}")
+                extra_search_urls.append(
+                    f"{LK21_URL}/?s={quote_plus(query + ' ' + str(y))}"
+                )
 
         soup_pages = [BeautifulSoup(h, "html.parser") for h in all_html]
 
         cards = []
         for soup in soup_pages:
             page_cards = (
-                soup.select("article.item") or
-                soup.select(".movies-list article") or
-                soup.select("article") or
-                soup.select(".item")
+                soup.select("article.item")
+                or soup.select(".movies-list article")
+                or soup.select("article")
+                or soup.select(".item")
             )
             cards.extend(page_cards)
 
-        series_keywords = ["season", "episode", "s01", "s02", "eps", "the series", "complete series"]
+        series_keywords = [
+            "season",
+            "episode",
+            "s01",
+            "s02",
+            "eps",
+            "the series",
+            "complete series",
+        ]
 
         for card in cards:
             if len(results) >= max_results:
@@ -264,14 +330,24 @@ async def search_lk21_movies(query: str, max_results: int = 20) -> list:
                 if img_el:
                     # LK21 uses lazy loading - check all possible attrs
                     poster = (
-                        img_el.get("data-src") or
-                        img_el.get("data-lazy-src") or
-                        img_el.get("data-original") or
-                        img_el.get("data-lazy") or
-                        img_el.get("src") or ""
+                        img_el.get("data-src")
+                        or img_el.get("data-lazy-src")
+                        or img_el.get("data-original")
+                        or img_el.get("data-lazy")
+                        or img_el.get("src")
+                        or ""
                     )
                     # Skip placeholder/spinner images
-                    if poster and any(skip in poster for skip in ["placeholder", "spinner", "loading", "blank.gif", "data:image"]):
+                    if poster and any(
+                        skip in poster
+                        for skip in [
+                            "placeholder",
+                            "spinner",
+                            "loading",
+                            "blank.gif",
+                            "data:image",
+                        ]
+                    ):
                         poster = ""
                     if poster and poster.startswith("//"):
                         poster = "https:" + poster
@@ -283,39 +359,45 @@ async def search_lk21_movies(query: str, max_results: int = 20) -> list:
                 genre_els = card.select(".genre a, .categories a, .cat a")
                 genres = ", ".join(g.get_text(strip=True) for g in genre_els[:3])
 
-                # Fallback poster: use OMDB/poster API if LK21 has no image
+                # Get poster from TMDB for accurate results
                 if not poster:
-                    title_enc = quote_plus(title)
-                    yr = year or ""
-                    poster = f"https://img.omdbapi.com/?t={title_enc}&y={yr}&apikey=trilogy&h=400"
+                    poster = await _get_tmdb_poster(title, year)
 
-                results.append({
-                    "subjectId":       f"lk21_{abs(hash(page_url)) % 10**10}",
-                    "title":           title,
-                    "description":     "",
-                    "releaseDate":     f"{year}-01-01" if year else "2000-01-01",
-                    "duration":        0,
-                    "genre":           genres or "Movie",
-                    "countryName":     "",
-                    "imdbRatingValue": score,
-                    "subjectType":     1,
-                    "detailPath":      "",
-                    "corner":          "",
-                    "appointmentCnt":  0,
-                    "appointmentDate": "",
-                    "stafflist":       None,
-                    "subtitles":       "id",
-                    "hasResource":     True,
-                    "source":          "lk21",
-                    "sourceUrl":       page_url,
-                    "sourceName":      "LK21",
-                    "cover": {
-                        "url": poster, "thumbnail": poster,
-                        "width": 0, "height": 0, "size": 0,
-                        "format": "", "blurHash": "",
-                        "avgHueLight": "", "avgHueDark": "", "id": "0",
-                    },
-                })
+                results.append(
+                    {
+                        "subjectId": f"lk21_{abs(hash(page_url)) % 10**10}",
+                        "title": title,
+                        "description": "",
+                        "releaseDate": f"{year}-01-01" if year else "2000-01-01",
+                        "duration": 0,
+                        "genre": genres or "Movie",
+                        "countryName": "",
+                        "imdbRatingValue": score,
+                        "subjectType": 1,
+                        "detailPath": "",
+                        "corner": "",
+                        "appointmentCnt": 0,
+                        "appointmentDate": "",
+                        "stafflist": None,
+                        "subtitles": "id",
+                        "hasResource": True,
+                        "source": "lk21",
+                        "sourceUrl": page_url,
+                        "sourceName": "LK21",
+                        "cover": {
+                            "url": poster,
+                            "thumbnail": poster,
+                            "width": 0,
+                            "height": 0,
+                            "size": 0,
+                            "format": "",
+                            "blurHash": "",
+                            "avgHueLight": "",
+                            "avgHueDark": "",
+                            "id": "0",
+                        },
+                    }
+                )
             except Exception as card_err:
                 logger.debug(f"Card parse error: {card_err}")
                 continue
@@ -336,6 +418,7 @@ async def search_lk21_movies(query: str, max_results: int = 20) -> list:
 
 # ── STREAM EXTRACTION ─────────────────────────────────────────────────────────
 
+
 async def extract_lk21_stream(page_url: str) -> dict:
     """Visit LK21 movie page, find all embed/direct video URLs."""
     streams = []
@@ -353,17 +436,23 @@ async def extract_lk21_stream(page_url: str) -> dict:
             if any(skip in u for skip in ["thumbnail", "poster", ".css", "cdn.js"]):
                 continue
             label = "1080p" if "1080" in u else "720p" if "720" in u else "HD"
-            streams.append({"url": u, "resolution": label, "label": label, "source": "direct"})
+            streams.append(
+                {"url": u, "resolution": label, "label": label, "source": "direct"}
+            )
             if len(streams) >= 3:
                 break
 
         # 2. JS file/src/source keys
-        js_urls = re.findall(r'(?:file|src|source)\s*:\s*["\']( https?://[^"\']+)["\']', html)
+        js_urls = re.findall(
+            r'(?:file|src|source)\s*:\s*["\']( https?://[^"\']+)["\']', html
+        )
         for u in dict.fromkeys(js_urls):
             u = u.strip()
             if u and u not in {s["url"] for s in streams}:
                 label = "1080p" if "1080" in u else "720p" if "720" in u else "HD"
-                streams.append({"url": u, "resolution": label, "label": label, "source": "js"})
+                streams.append(
+                    {"url": u, "resolution": label, "label": label, "source": "js"}
+                )
 
         # 3. Iframes
         iframes = soup.select("iframe[src], iframe[data-src]")
@@ -371,7 +460,11 @@ async def extract_lk21_stream(page_url: str) -> dict:
         skip_domains = ["google.com/maps", "facebook.com", "twitter.com", "youtube.com"]
         for iframe in iframes:
             src = iframe.get("src") or iframe.get("data-src", "")
-            if src and src.startswith("http") and not any(d in src for d in skip_domains):
+            if (
+                src
+                and src.startswith("http")
+                and not any(d in src for d in skip_domains)
+            ):
                 embed_urls.append(src)
 
         # 4. Resolve embeds (max 4 to avoid rate limits)
@@ -419,10 +512,26 @@ async def _resolve_streamtape(url: str) -> list:
             r = await c.get(url, timeout=10)
             m = re.search(r"(streamtape\.com/get_video\?[^\s\"'<>]+)", r.text)
             if m:
-                return [{"url": "https://" + m.group(1), "resolution": "HD", "label": "HD", "source": "streamtape"}]
-            m2 = re.search(r'(?:file|src)\s*[=:]\s*["\']( https?://[^"\']+)["\']', r.text)
+                return [
+                    {
+                        "url": "https://" + m.group(1),
+                        "resolution": "HD",
+                        "label": "HD",
+                        "source": "streamtape",
+                    }
+                ]
+            m2 = re.search(
+                r'(?:file|src)\s*[=:]\s*["\']( https?://[^"\']+)["\']', r.text
+            )
             if m2:
-                return [{"url": m2.group(1).strip(), "resolution": "HD", "label": "HD", "source": "streamtape"}]
+                return [
+                    {
+                        "url": m2.group(1).strip(),
+                        "resolution": "HD",
+                        "label": "HD",
+                        "source": "streamtape",
+                    }
+                ]
     except Exception as e:
         logger.debug(f"Streamtape error: {e}")
     return []
@@ -440,7 +549,14 @@ async def _resolve_doodstream(url: str) -> list:
                 token = ("?token=" + token_m.group(1)) if token_m else ""
                 video_url = r2.text.strip() + token
                 if video_url.startswith("http"):
-                    return [{"url": video_url, "resolution": "HD", "label": "HD", "source": "dood"}]
+                    return [
+                        {
+                            "url": video_url,
+                            "resolution": "HD",
+                            "label": "HD",
+                            "source": "dood",
+                        }
+                    ]
     except Exception as e:
         logger.debug(f"Doodstream error: {e}")
     return []
@@ -456,7 +572,9 @@ async def _resolve_generic(url: str, referer: str) -> list:
                 if any(skip in u for skip in ["thumbnail", "poster", ".css"]):
                     continue
                 label = "1080p" if "1080" in u else "720p" if "720" in u else "HD"
-                streams.append({"url": u, "resolution": label, "label": label, "source": "embed"})
+                streams.append(
+                    {"url": u, "resolution": label, "label": label, "source": "embed"}
+                )
                 if len(streams) >= 3:
                     break
             return streams
