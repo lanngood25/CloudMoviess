@@ -875,10 +875,42 @@
       padding: 14px 18px 10px;
       opacity: 0;
       transition: opacity .25s;
+      pointer-events: none;
     }
 
-    .player-wrap:hover .vid-ctrls,
+    .player-wrap.show-ctrls .vid-ctrls,
     .player-wrap.paused .vid-ctrls {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* Non-fullscreen: show on hover */
+    .player-wrap:not(:fullscreen):hover .vid-ctrls {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* Skip indicator overlay */
+    .skip-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, .55);
+      backdrop-filter: blur(6px);
+      border-radius: 50px;
+      padding: 8px 20px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .25s;
+      z-index: 6;
+      white-space: nowrap;
+    }
+
+    .skip-indicator.show {
       opacity: 1;
     }
 
@@ -2335,6 +2367,7 @@
             <span>+10s</span>
           </div>
         </div>
+        <div class="skip-indicator" id="skip-indicator"></div>
         <video id="vid" preload="metadata" crossorigin="anonymous" playsinline></video>
         <div id="sub-overlay"></div>
         <div class="vid-ctrls">
@@ -2794,42 +2827,68 @@
     vid.addEventListener('loadedmetadata', () => { $('dt').textContent = ft(vid.duration); });
     vid.addEventListener('play', () => { $('play-ic').style.display = 'none'; $('pause-ic').style.display = ''; $('p-wrap').classList.remove('paused'); });
     vid.addEventListener('pause', () => { $('play-ic').style.display = ''; $('pause-ic').style.display = 'none'; $('p-wrap').classList.add('paused'); });
-    // Double-click/tap to skip ±10s, single click shows controls
-    let _skipTimer = null, _clickCount = 0, _clickX = 0;
+    // ── Auto-hide controls ──────────────────────────────────────────────────
+    let _ctrlTimer;
+    function showCtrls() {
+      $('p-wrap').classList.add('show-ctrls');
+      clearTimeout(_ctrlTimer);
+      if (!vid.paused) _ctrlTimer = setTimeout(() => $('p-wrap').classList.remove('show-ctrls'), 3000);
+    }
+    $('p-wrap').addEventListener('mousemove', showCtrls);
+    $('p-wrap').addEventListener('touchstart', showCtrls, { passive: true });
+    $('p-wrap').addEventListener('mouseleave', () => {
+      if (!vid.paused) { clearTimeout(_ctrlTimer); $('p-wrap').classList.remove('show-ctrls'); }
+    });
+    document.addEventListener('fullscreenchange', () => {
+      if (document.fullscreenElement) showCtrls(); else $('p-wrap').classList.remove('show-ctrls');
+    });
+
+    // ── Multi-tap skip: each tap adds 10s, accumulates within 350ms ───────────
+    let _tapTimer = null, _tapCount = 0, _tapSide = null, _tapTotal = 0, _indTimer = null;
+
+    function showSkipIndicator(side, total) {
+      const el = $('skip-indicator');
+      el.textContent = (side === 'left' ? '◀◀ -' : '▶▶ +') + total + 's';
+      el.classList.add('show');
+      clearTimeout(_indTimer);
+      _indTimer = setTimeout(() => el.classList.remove('show'), 800);
+      flashSkip(side);
+    }
+
+    function handleTap(x, rectWidth) {
+      const side = x < rectWidth / 2 ? 'left' : 'right';
+      if (_tapSide && _tapSide !== side) { _tapCount = 0; _tapTotal = 0; }
+      _tapSide = side;
+      _tapCount++;
+      _tapTotal += 10;
+      // Show live indicator while tapping
+      if (_tapCount >= 2) showSkipIndicator(side, _tapTotal);
+      clearTimeout(_tapTimer);
+      _tapTimer = setTimeout(() => {
+        if (_tapCount >= 2) skip(side === 'left' ? -_tapTotal : _tapTotal);
+        else showCtrls();
+        _tapCount = 0; _tapTotal = 0; _tapSide = null;
+      }, 350);
+    }
+
     $('p-wrap').addEventListener('click', function (e) {
       if (e.target.closest('.vid-ctrls') || e.target.closest('#vid-loader') || e.target.closest('.skip-overlay')) return;
-      _clickCount++;
-      _clickX = e.clientX;
-      clearTimeout(_skipTimer);
-      _skipTimer = setTimeout(() => {
-        if (_clickCount >= 2) {
-          const rect = this.getBoundingClientRect();
-          if (_clickX - rect.left < rect.width / 2) { skip(-10); flashSkip('left'); }
-          else { skip(10); flashSkip('right'); }
-        } else { showCtrls(); }
-        _clickCount = 0;
-      }, 250);
+      const rect = this.getBoundingClientRect();
+      handleTap(e.clientX - rect.left, rect.width);
     });
-    let _lastTap = 0;
+
     $('p-wrap').addEventListener('touchend', function (e) {
       if (e.target.closest('.vid-ctrls') || e.target.closest('#vid-loader')) return;
-      const now = Date.now();
-      if (now - _lastTap < 300) {
-        e.preventDefault();
-        const touch = e.changedTouches[0];
-        const rect = this.getBoundingClientRect();
-        if (touch.clientX - rect.left < rect.width / 2) { skip(-10); flashSkip('left'); }
-        else { skip(10); flashSkip('right'); }
-        _lastTap = 0;
-      } else { showCtrls(); _lastTap = now; }
-    });
+      e.preventDefault();
+      const touch = e.changedTouches[0];
+      const rect = this.getBoundingClientRect();
+      handleTap(touch.clientX - rect.left, rect.width);
+    }, { passive: false });
 
     let _skipTimer2 = null;
     function flashSkip(side) {
       const el = $(side === 'left' ? 'skip-left' : 'skip-right');
-      el.classList.remove('show');
-      void el.offsetWidth;
-      el.classList.add('show');
+      el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
       clearTimeout(_skipTimer2);
       _skipTimer2 = setTimeout(() => el.classList.remove('show'), 700);
     }
