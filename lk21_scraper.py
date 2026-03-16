@@ -75,33 +75,86 @@ async def _fetch_lk21_page(url: str) -> Optional[dict]:
                 return None
             soup = BeautifulSoup(r.text, "html.parser")
 
-            # Reject homepage/search page
-            title_el = soup.select_one("h1.entry-title, h1.judul-film, .film-title, h1")
-            if not title_el:
-                return None
-            found_title = re.sub(r"\s+", " ", title_el.get_text()).strip()
-            reject = [
-                "nonton film",
-                "layarkaca21",
-                "lk21",
-                "sub indo gratis",
-                "streaming film",
+            # Reject ONLY if it's homepage/search page (not a movie page)
+            # LK21 puts brand in title like "Nonton Battleship (2012) Sub Indo di LK21"
+            # so we CANNOT reject on "lk21" keyword
+            reject_homepage = [
+                "streaming film gratis",
+                "nonton film online",
+                "layarkaca21 | nonton",
             ]
-            if any(p in found_title.lower() for p in reject) or len(found_title) < 2:
+            page_title_tag = soup.find("title")
+            page_title_str = page_title_tag.get_text() if page_title_tag else ""
+            if any(p in page_title_str.lower() for p in reject_homepage):
                 return None
 
-            img_el = soup.select_one(".poster img, .thumb img, img[class*=poster]")
+            # Try multiple title selectors — LK21 uses different themes
+            title_el = (
+                soup.select_one("h1.entry-title")
+                or soup.select_one("h1.judul-film")
+                or soup.select_one(".film-title h1")
+                or soup.select_one(".gmr-title")
+                or soup.select_one("h1")
+            )
+            if not title_el:
+                return None
+
+            raw_title = re.sub(r"\s+", " ", title_el.get_text()).strip()
+
+            # Clean LK21 branding from title
+            # e.g. "Nonton Battleship (2012) Sub Indo" → "Battleship (2012)"
+            clean = raw_title
+            for prefix in ["nonton ", "download ", "streaming "]:
+                if clean.lower().startswith(prefix):
+                    clean = clean[len(prefix) :]
+            for suffix in [
+                " sub indo",
+                " subtitle indonesia",
+                " full movie",
+                " online",
+                " di lk21",
+                " di layarkaca21",
+                " gratis",
+            ]:
+                if clean.lower().endswith(suffix):
+                    clean = clean[: -len(suffix)]
+            # Remove year in parentheses from title for display
+            # but keep it for releaseDate extraction
+            clean = clean.strip()
+
+            if len(clean) < 2:
+                return None
+
+            # Extract year from title like "Battleship (2012)" or from page
+            year_from_title = re.search(r"\((\d{4})\)", clean)
+            page_year = ""
+            if year_from_title:
+                page_year = year_from_title.group(1)
+                # Remove year from display title
+                clean = re.sub(r"\s*\(\d{4}\)\s*", " ", clean).strip()
+            if not page_year:
+                year_el = soup.select_one(".year, .gmr-movie-on, time, .released")
+                page_year = _extract_year(
+                    year_el.get_text() if year_el else ""
+                ) or _extract_year(page_title_str)
+
+            # Poster
+            img_el = (
+                soup.select_one(".poster img")
+                or soup.select_one(".thumb img")
+                or soup.select_one("img[class*=poster]")
+                or soup.select_one(".gmr-item-result img")
+                or soup.select_one("article img")
+            )
             poster = ""
             if img_el:
                 poster = img_el.get("src") or img_el.get("data-src", "")
                 if poster and poster.startswith("//"):
                     poster = "https:" + poster
 
-            year_el = soup.select_one(".year, .gmr-movie-on, time")
-            page_year = _extract_year(
-                year_el.get_text() if year_el else ""
-            ) or _extract_year(soup.get_text()[:1500])
-            score_el = soup.select_one(".imdb, .rating, [itemprop=ratingValue]")
+            score_el = soup.select_one(
+                ".imdb, .rating, [itemprop=ratingValue], .gmr-rating"
+            )
             score = _extract_rating(score_el.get_text() if score_el else "")
             desc_el = soup.select_one(
                 ".synopsis p, .entry-content p, [itemprop=description]"
@@ -110,10 +163,10 @@ async def _fetch_lk21_page(url: str) -> Optional[dict]:
                 re.sub(r"\s+", " ", desc_el.get_text()).strip()[:300] if desc_el else ""
             )
 
-            logger.info(f"LK21 direct hit: {url} → {found_title}")
+            logger.info(f"LK21 direct hit: {url} → {clean} ({page_year})")
             return {
                 "subjectId": f"lk21_{abs(hash(url)) % 10**10}",
-                "title": found_title,
+                "title": clean,
                 "description": desc,
                 "releaseDate": f"{page_year}-01-01" if page_year else "2000-01-01",
                 "duration": 0,
