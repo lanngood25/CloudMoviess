@@ -3143,48 +3143,50 @@
           const all = [...(p0.items || p0.subjectList || []), ...(p1.items || p1.subjectList || [])];
           items = all.filter(it => { if (seen.has(it.subjectId)) return false; seen.add(it.subjectId); return true; });
         } else {
-          // Multi-page search for keyword
-          const pages = await Promise.all([1, 2, 3].map(page =>
-            fetch(API + '/search', {
+          // MovieBox + LK21 search IN PARALLEL — always combine both sources
+          const [mbPages, lk21Result] = await Promise.all([
+            // MovieBox: fetch 3 pages
+            Promise.all([1, 2, 3].map(page =>
+              fetch(API + '/search', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyword: q, subject_type: type, page, per_page: 24 }),
+              }).then(r => r.json()).catch(() => ({ items: [] }))
+            )),
+            // LK21: always search in parallel
+            q ? fetch(API + '/search/fallback', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ keyword: q, subject_type: type, page, per_page: 24 }),
-            }).then(r => r.json()).catch(() => ({ items: [] }))
-          ));
-          const seen = new Set();
-          items = pages.flatMap(d => d.items || []).filter(it => {
-            if (seen.has(it.subjectId)) return false; seen.add(it.subjectId); return true;
+              body: JSON.stringify({ keyword: q, subject_type: type, page: 1, per_page: 20 }),
+            }).then(r => r.json()).catch(() => ({ items: [] })) : Promise.resolve({ items: [] }),
+          ]);
+
+          // Merge MovieBox results
+          const mbSeen = new Set();
+          const mbItems = mbPages.flatMap(d => d.items || []).filter(it => {
+            if (mbSeen.has(it.subjectId)) return false; mbSeen.add(it.subjectId); return true;
           });
+
+          // LK21 results — deduplicate by normalized title against MovieBox
+          const mbTitles = new Set(mbItems.map(it => it.title.toLowerCase().trim()));
+          const lk21Items = (lk21Result.items || []).filter(it =>
+            !mbTitles.has(it.title.toLowerCase().trim())
+          );
+
+          items = [...mbItems, ...lk21Items];
         }
+
         $('s-sub').textContent = `${items.length} results found`;
         const grid = $('s-grid');
-        if (!items.length && q) {
-          // ── AUTO FALLBACK to LK21 + NontonDrama ──
-          $('s-sub').textContent = '0 di MovieBox — mencari di LK21 & NontonDrama…';
-          grid.innerHTML = '<div class="spin-wrap" style="grid-column:1/-1"><div class="spin"></div><span class="spin-lbl">Searching LK21...</span></div>';
-          try {
-            const fbRes = await fetch(API + '/search/fallback', {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ keyword: q, subject_type: type, page: 1, per_page: 24 }),
-            });
-            const fbData = await fbRes.json();
-            const fbItems = fbData.items || [];
-            if (!fbItems.length) {
-              grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><h3>Tidak Ditemukan</h3><p>Film tidak tersedia di MovieBox, LK21, maupun NontonDrama.</p></div>`;
-              return;
-            }
-            $('s-sub').textContent = `${fbItems.length} results dari LK21`;
-            grid.innerHTML = `<div class="fallback-notice"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Tidak ditemukan di MovieBox — hasil dari <b>LK21</b>. Klik film untuk streaming langsung! 🎬</div>`;
-            fbItems.forEach((it, i) => { const c = mkCard(it, i * 30); c.style.width = ''; grid.appendChild(c); });
-          } catch {
-            grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>No Results</h3><p>Coba keyword berbeda.</p></div>`;
-          }
-          return;
-        }
+
         if (!items.length) {
-          grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><h3>No Results</h3><p>Try a different keyword or browse trending.</p></div>`;
+          grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><h3>Tidak Ditemukan</h3><p>Film tidak tersedia di MovieBox maupun LK21.</p></div>`;
           return;
         }
-        grid.innerHTML = '';
+
+        // Show LK21 notice if there are LK21 results
+        const hasLK21 = items.some(it => it.source === 'lk21');
+        grid.innerHTML = hasLK21
+          ? `<div class="fallback-notice"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Hasil dari <b>MovieBox</b> + <b>LK21</b> — film ber-badge <span style="background:#22c55e;color:#000;padding:1px 6px;border-radius:3px;font-size:.7rem;font-weight:800">LK21</span> klik untuk streaming langsung!</div>`
+          : '';
         items.forEach((it, i) => { const c = mkCard(it, i * 20); c.style.width = ''; grid.appendChild(c); });
       } catch (e) {
         $('s-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Error</h3><p>${e.message}</p></div>`;
@@ -3627,36 +3629,47 @@
       _skipTimer = setTimeout(() => el.classList.remove('show'), 700);
     }
 
+    // Double-click to skip (desktop)
+    let _clickTimer = null, _clickCount = 0, _clickX = 0;
     $('p-wrap').addEventListener('click', function (e) {
-      // Ignore clicks on controls, loader, overlays
       if (e.target.closest('.vid-ctrls') || e.target.closest('#vid-loader') || e.target.closest('.skip-overlay')) return;
-      const rect = this.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const half = rect.width / 2;
-      if (x < half) {
-        skip(-10); flashSkip('left');
-      } else {
-        skip(10); flashSkip('right');
-      }
+      _clickCount++;
+      _clickX = e.clientX;
+      clearTimeout(_clickTimer);
+      _clickTimer = setTimeout(() => {
+        if (_clickCount >= 2) {
+          // Double-click → skip
+          const rect = this.getBoundingClientRect();
+          const x = _clickX - rect.left;
+          if (x < rect.width / 2) { skip(-10); flashSkip('left'); }
+          else { skip(10); flashSkip('right'); }
+        } else {
+          // Single click → just show controls
+          showCtrls();
+        }
+        _clickCount = 0;
+      }, 250);
     });
 
-    // Touch support for mobile
+    // Double-tap to skip (mobile/touch)
     let _lastTap = 0;
     $('p-wrap').addEventListener('touchend', function (e) {
       if (e.target.closest('.vid-ctrls') || e.target.closest('#vid-loader')) return;
       const now = Date.now();
-      // Double tap = skip, single tap = show controls only
       if (now - _lastTap < 300) {
+        // Double tap → skip
         e.preventDefault();
         const touch = e.changedTouches[0];
         const rect = this.getBoundingClientRect();
         const x = touch.clientX - rect.left;
         if (x < rect.width / 2) { skip(-10); flashSkip('left'); }
         else { skip(10); flashSkip('right'); }
+        _lastTap = 0; // reset so triple tap doesn't re-trigger
       } else {
+        // Single tap → show controls only
         showCtrls();
+        _lastTap = now;
       }
-      _lastTap = now;
     });
 
     function togglePP() { vid.paused ? vid.play() : vid.pause(); }
