@@ -185,17 +185,23 @@ async def _try_direct_url(title: str, year: str) -> dict | None:
     import datetime
 
     current_year = datetime.datetime.now().year
-    years_to_try = list(range(current_year, current_year - 8, -1))
+    # Go back to 1990 to cover all classic movies
+    years_to_try = list(range(current_year, 1989, -1))
 
-    # Try all year variants concurrently for speed
-    tasks = [_fetch_lk21_page(f"{LK21_URL}/{base_slug}-{y}") for y in years_to_try]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    for r in results:
-        if r and not isinstance(r, Exception):
-            return r
-
-    # Last resort: try without year
+    # Try in batches of 8 concurrently to avoid overwhelming LK21
+    found = None
+    for i in range(0, len(years_to_try), 8):
+        batch = years_to_try[i : i + 8]
+        tasks = [_fetch_lk21_page(f"{LK21_URL}/{base_slug}-{y}") for y in batch]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for r in results:
+            if r and not isinstance(r, Exception):
+                return r
     return await _fetch_lk21_page(f"{LK21_URL}/{base_slug}")
+
+    # (unreachable - kept for structure)
+    tasks = [_fetch_lk21_page(f"{LK21_URL}/{base_slug}-{y}") for y in years_to_try]
+    return None  # already handled above
 
 
 async def search_lk21_movies(query: str, max_results: int = 20) -> list:
