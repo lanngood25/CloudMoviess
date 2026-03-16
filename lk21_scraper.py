@@ -620,59 +620,60 @@ async def _resolve_generic(url: str, referer: str) -> list:
     return []
 
 
-async def _resolve_playeriframe(url: str, referer: str) -> list:
-    """Resolve playeriframe.sbs used by LK21."""
+async def _extract_streams_from_html(html, source_name):
     streams = []
-    try:
-        h = {**HEADERS, "Referer": referer}
-        async with httpx.AsyncClient(headers=h, follow_redirects=True, timeout=15) as c:
-            r = await c.get(url)
-            if r.status_code != 200:
-                return []
-            html = r.text
-
-            # m3u8/mp4 direct
-            found = re.findall(r'https?://[^\s\'"<>]+\.(?:m3u8|mp4)[^\s\'"<>]*', html)
-            for u in dict.fromkeys(found):
-                if any(s in u for s in ["thumbnail", "poster", "placeholder"]):
-                    continue
-                label = "1080p" if "1080" in u else "720p" if "720" in u else "HD"
+    pat1 = r"https?://[^\s'\"<>]+\.(?:m3u8|mp4)[^\s'\"<>]*"
+    for u in dict.fromkeys(re.findall(pat1, html)):
+        if any(s in u for s in ["thumbnail", "poster", "placeholder"]):
+            continue
+        label = "1080p" if "1080" in u else "720p" if "720" in u else "HD"
+        streams.append(
+            {"url": u, "resolution": label, "label": label, "source": source_name}
+        )
+    pat2 = r'(?:file|src|source|url|stream)\s*[=:]\s*["\x27](https?://[^"\x27]+)["\x27]'
+    for u in dict.fromkeys(re.findall(pat2, html)):
+        if u and u not in {s["url"] for s in streams}:
+            if ".m3u8" in u or ".mp4" in u:
+                label = "1080p" if "1080" in u else "HD"
                 streams.append(
                     {
                         "url": u,
                         "resolution": label,
                         "label": label,
-                        "source": "playeriframe",
+                        "source": source_name,
                     }
                 )
+    return streams
 
-            # JS file/src keys
-            js_found = re.findall(
-                r'(?:file|src|source|url)\s*[=:]\s*["\'](https?://[^"\']+)["\']', html
-            )
-            for u in dict.fromkeys(js_found):
-                u = u.strip()
-                if u and u not in {s["url"] for s in streams}:
-                    if any(ext in u for ext in [".m3u8", ".mp4", ".ts"]):
-                        label = "1080p" if "1080" in u else "HD"
-                        streams.append(
-                            {
-                                "url": u,
-                                "resolution": label,
-                                "label": label,
-                                "source": "playeriframe",
-                            }
-                        )
 
-            # Nested iframes
-            nested = re.findall(r'<iframe[^>]+src=["\'](https?://[^"\']+)["\']', html)
-            for ni in nested[:2]:
-                ni = ni.strip()
-                if ni and ni != url:
-                    res = await _resolve_generic(ni, url)
-                    streams.extend(res)
-
-            logger.info(f"playeriframe {url}: {len(streams)} streams")
+async def _resolve_playeriframe(url, referer):
+    streams = []
+    visited = set()
+    to_visit = [(url, referer)]
+    try:
+        async with httpx.AsyncClient(
+            headers={**HEADERS, "Referer": referer}, follow_redirects=True, timeout=15
+        ) as c:
+            for current_url, current_ref in to_visit[:5]:
+                if current_url in visited:
+                    continue
+                visited.add(current_url)
+                try:
+                    r = await c.get(current_url, headers={"Referer": current_ref})
+                    if r.status_code != 200:
+                        continue
+                    html = r.text
+                    found = await _extract_streams_from_html(html, "lk21")
+                    streams.extend(found)
+                    if streams:
+                        break
+                    ifpat = r'<iframe[^>]+src=["\x27](https?://[^"\x27]+)["\x27]'
+                    for ni in re.findall(ifpat, html)[:3]:
+                        if ni and ni not in visited:
+                            to_visit.append((ni, current_url))
+                except Exception as ex:
+                    logger.debug(f"visit error {current_url}: {ex}")
+        logger.info(f"playeriframe {url}: {len(streams)} streams")
     except Exception as e:
         logger.debug(f"playeriframe error: {e}")
-    return streams
+    return streams[:4]
