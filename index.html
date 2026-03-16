@@ -3225,9 +3225,18 @@
 
           // LK21 results — deduplicate by normalized title against MovieBox
           const mbTitles = new Set(mbItems.map(it => it.title.toLowerCase().trim()));
-          const lk21Items = (lk21Result.items || []).filter(it =>
-            !mbTitles.has(it.title.toLowerCase().trim())
-          );
+          const allLk21 = lk21Result.items || [];
+          // Debug
+          console.log('[LK21] raw result:', lk21Result);
+          console.log('[LK21] items count:', allLk21.length);
+          console.log('[LK21] mbTitles:', [...mbTitles]);
+          const lk21Items = allLk21.filter(it => {
+            const t = it.title.toLowerCase().trim();
+            const blocked = mbTitles.has(t);
+            if (blocked) console.log('[LK21] filtered out (dup):', it.title);
+            return !blocked;
+          });
+          console.log('[LK21] after filter:', lk21Items.length, lk21Items.map(i => i.title));
 
           items = [...mbItems, ...lk21Items];
         }
