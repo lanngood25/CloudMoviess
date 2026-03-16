@@ -1877,13 +1877,507 @@
       color: #fff;
       letter-spacing: .5px;
     }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      position: fixed;
+      top: 66px;
+      left: 0;
+      bottom: 0;
+      width: 220px;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+      overflow-y: auto;
+      padding: 20px 0 40px;
+    }
+
+    #sidebar.open {
+      transform: translateX(0);
+      box-shadow: 4px 0 40px rgba(0, 0, 0, .5);
+    }
+
+    .sb-section {
+      padding: 6px 16px 4px;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-top: 8px;
+    }
+
+    .sb-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      width: 100%;
+      text-align: left;
+      font-size: .9rem;
+      font-weight: 500;
+      color: var(--text2);
+      border-radius: 0;
+      cursor: pointer;
+      transition: all .18s;
+      border-left: 3px solid transparent;
+    }
+
+    .sb-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, .04);
+    }
+
+    .sb-btn.active {
+      color: var(--red);
+      background: rgba(229, 9, 20, .08);
+      border-left-color: var(--red);
+    }
+
+    .sb-btn svg {
+      flex-shrink: 0;
+      opacity: .7;
+    }
+
+    .sb-btn.active svg {
+      opacity: 1;
+    }
+
+    .sb-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99;
+      background: rgba(0, 0, 0, .5);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+    }
+
+    .sb-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* Hamburger button */
+    #sb-toggle {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text2);
+      transition: all .2s;
+      flex-shrink: 0;
+    }
+
+    #sb-toggle:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, .06);
+    }
+
+    /* ── AI ASSISTANT ── */
+    #ai-btn {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 9000;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--red), #800);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px var(--red-glow), 0 0 0 0 rgba(229, 9, 20, .4);
+      animation: aiBtnPulse 2.5s ease-in-out infinite;
+      cursor: pointer;
+      transition: transform .2s;
+    }
+
+    #ai-btn:hover {
+      transform: scale(1.1);
+    }
+
+    @keyframes aiBtnPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 4px 20px var(--red-glow), 0 0 0 0 rgba(229, 9, 20, .4);
+      }
+
+      50% {
+        box-shadow: 0 4px 20px var(--red-glow), 0 0 0 10px rgba(229, 9, 20, 0);
+      }
+    }
+
+    #ai-panel {
+      position: fixed;
+      bottom: 96px;
+      right: 28px;
+      z-index: 9000;
+      width: 360px;
+      max-height: 520px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+      transform: scale(.9) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all .3s cubic-bezier(.34, 1.56, .64, 1);
+      overflow: hidden;
+    }
+
+    #ai-panel.open {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .ai-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(229, 9, 20, .15), rgba(229, 9, 20, .05));
+      flex-shrink: 0;
+    }
+
+    .ai-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, var(--red), #800);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ai-header-info .ai-name {
+      font-weight: 700;
+      font-size: .9rem;
+    }
+
+    .ai-header-info .ai-status {
+      font-size: .72rem;
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .ai-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+
+    .ai-close {
+      margin-left: auto;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .ai-close:hover {
+      color: var(--text);
+    }
+
+    .ai-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .ai-msg {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      animation: cardIn .25s ease both;
+    }
+
+    .ai-msg.user {
+      flex-direction: row-reverse;
+    }
+
+    .ai-bubble {
+      max-width: 80%;
+      padding: 9px 13px;
+      border-radius: 14px;
+      font-size: .85rem;
+      line-height: 1.5;
+    }
+
+    .ai-msg.bot .ai-bubble {
+      background: var(--card);
+      border-radius: 4px 14px 14px 14px;
+      color: var(--text);
+    }
+
+    .ai-msg.user .ai-bubble {
+      background: var(--red);
+      color: #fff;
+      border-radius: 14px 4px 14px 14px;
+    }
+
+    .ai-msg-ava {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .7rem;
+      font-weight: 700;
+    }
+
+    .ai-msg.bot .ai-msg-ava {
+      background: linear-gradient(135deg, var(--red), #800);
+    }
+
+    .ai-msg.user .ai-msg-ava {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    }
+
+    .ai-typing {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 13px;
+    }
+
+    .ai-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text3);
+      animation: aiDot 1.2s ease-in-out infinite;
+    }
+
+    .ai-dot:nth-child(2) {
+      animation-delay: .2s;
+    }
+
+    .ai-dot:nth-child(3) {
+      animation-delay: .4s;
+    }
+
+    @keyframes aiDot {
+
+      0%,
+      80%,
+      100% {
+        transform: scale(.8);
+        opacity: .4
+      }
+
+      40% {
+        transform: scale(1.1);
+        opacity: 1
+      }
+    }
+
+    .ai-quick-btns {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 0 14px 10px;
+      flex-shrink: 0;
+    }
+
+    .ai-quick {
+      padding: 5px 12px;
+      border-radius: 50px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      font-size: .75rem;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all .18s;
+      white-space: nowrap;
+    }
+
+    .ai-quick:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: var(--red-dim);
+    }
+
+    .ai-input-row {
+      display: flex;
+      gap: 8px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--bg);
+    }
+
+    .ai-input {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 8px 14px;
+      font-size: .85rem;
+      color: var(--text);
+      outline: none;
+      font-family: 'Outfit', sans-serif;
+      transition: border-color .2s;
+    }
+
+    .ai-input:focus {
+      border-color: var(--red);
+    }
+
+    .ai-input::placeholder {
+      color: var(--text3);
+    }
+
+    .ai-send {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .ai-send:hover {
+      background: var(--red2);
+      transform: scale(1.05);
+    }
+
+    .ai-movie-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--red-dim);
+      border: 1px solid rgba(229, 9, 20, .3);
+      padding: 3px 10px;
+      border-radius: 50px;
+      font-size: .78rem;
+      color: var(--red);
+      cursor: pointer;
+      transition: all .2s;
+      margin: 2px;
+    }
+
+    .ai-movie-chip:hover {
+      background: var(--red);
+      color: #fff;
+    }
+
+    @media(max-width:768px) {
+      #ai-panel {
+        width: calc(100vw - 32px);
+        right: 16px;
+        bottom: 88px;
+      }
+
+      #ai-btn {
+        right: 16px;
+        bottom: 16px;
+      }
+
+      #sidebar {
+        width: 260px;
+      }
+    }
   </style>
 </head>
 
 <body>
 
   <!-- NAVBAR -->
+  <!-- Sidebar overlay -->
+  <div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="sb-section">Browse</div>
+    <button class="sb-btn active" id="sb-home" onclick="goHome();closeSidebar()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+      Home
+    </button>
+    <button class="sb-btn" id="sb-movies" onclick="browseCategory(1);closeSidebar()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+        <line x1="7" y1="2" x2="7" y2="22" />
+        <line x1="17" y1="2" x2="17" y2="22" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <line x1="2" y1="7" x2="7" y2="7" />
+        <line x1="2" y1="17" x2="7" y2="17" />
+        <line x1="17" y1="17" x2="22" y2="17" />
+        <line x1="17" y1="7" x2="22" y2="7" />
+      </svg>
+      Movies
+    </button>
+    <button class="sb-btn" id="sb-tv" onclick="browseCategory(2);closeSidebar()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="2" y="7" width="20" height="15" rx="2" ry="2" />
+        <polyline points="17 2 12 7 7 2" />
+      </svg>
+      TV Series
+    </button>
+    <button class="sb-btn" id="sb-anim" onclick="browseCategory(3);closeSidebar()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+        <line x1="9" y1="9" x2="9.01" y2="9" />
+        <line x1="15" y1="9" x2="15.01" y2="9" />
+      </svg>
+      Animation
+    </button>
+    <button class="sb-btn" id="sb-trend" onclick="goTrending();closeSidebar()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+        <polyline points="17 6 23 6 23 12" />
+      </svg>
+      Trending
+    </button>
+    <div class="sb-section" style="margin-top:16px">Library</div>
+    <button class="sb-btn" onclick="showWatchlist();closeSidebar()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path
+          d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+      </svg>
+      Watchlist
+    </button>
+  </div>
+
   <nav id="navbar">
+    <button id="sb-toggle" onclick="toggleSidebar()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    </button>
     <div class="logo" onclick="goHome()">Cloud<span>Movies</span></div>
     <div class="nav-links">
       <button class="active" onclick="goHome()">Home</button>
@@ -1952,7 +2446,7 @@
     <div class="section">
       <div class="sec-hd">
         <div class="sec-title">🎬 Hot Movies</div>
-        <button class="see-all" onclick="doSearch('',1)">See All</button>
+        <button class="see-all" onclick="browseCategory(1)">See All</button>
       </div>
       <div class="row" id="row-movies">
         <div class="spin-wrap">
@@ -1965,7 +2459,7 @@
     <div class="section" style="padding-bottom:80px">
       <div class="sec-hd">
         <div class="sec-title">📺 Hot TV Series</div>
-        <button class="see-all" onclick="doSearch('',2)">See All</button>
+        <button class="see-all" onclick="browseCategory(2)">See All</button>
       </div>
       <div class="row" id="row-tv">
         <div class="spin-wrap">
@@ -1990,6 +2484,16 @@
       <div class="spin-wrap" style="grid-column:1/-1">
         <div class="spin"></div><span class="spin-lbl">Searching…</span>
       </div>
+    </div>
+    <!-- Pagination -->
+    <div id="pagination"
+      style="display:none; text-align:center; padding:28px 40px 60px; justify-content:center; align-items:center; gap:10px">
+      <button id="load-more-btn" class="btn-ghost" style="padding:12px 32px;font-size:.9rem" onclick="loadMore()">
+        Load More
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -3084,11 +3588,209 @@
     /* ───── SCROLL NAVBAR ───── */
     window.addEventListener('scroll', () => { /* just for nav behaviour if needed */ });
 
+
+    /* ───── SIDEBAR ───── */
+    function toggleSidebar() {
+      $('sidebar').classList.toggle('open');
+      $('sb-overlay').classList.toggle('open');
+    }
+    function closeSidebar() {
+      $('sidebar').classList.remove('open');
+      $('sb-overlay').classList.remove('open');
+    }
+    function setSidebarActive(id) {
+      document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
+      if (id) $(id)?.classList.add('active');
+    }
+    function showWatchlist() {
+      setSidebarActive(null);
+      view('search');
+      $('s-head').textContent = '❤️ Watchlist';
+      const items = S.wl || [];
+      $('s-sub').textContent = `${items.length} saved`;
+      $('pagination').style.display = 'none';
+      const grid = $('s-grid');
+      if (!items.length) { grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Watchlist Kosong</h3><p>Tekan ❤️ di film untuk menyimpan.</p></div>`; return; }
+      grid.innerHTML = '';
+      items.forEach((it, i) => {
+        const c = document.createElement('div'); c.className = 'card'; c.style.animationDelay = i * 30 + 'ms';
+        c.innerHTML = `<div class="card-img-wrap"><img class="card-img" src="${it.cover || ''}" loading="lazy"/><div class="card-ov"><div class="card-play"><svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg></div></div></div><div class="card-info"><div class="card-name">${it.title}</div></div>`;
+        c.onclick = () => { const fake = { subjectId: it.subjectId, title: it.title, cover: it.cover, subjectType: 1, detailPath: it.detailPath || '', description: '', releaseDate: '2000-01-01', duration: 0, genre: '', countryName: '', imdbRatingValue: 0 }; showDetail(fake); };
+        grid.appendChild(c);
+      });
+    }
+
+    /* ───── ANIMATION BROWSE ───── */
+    async function browseAnimation() {
+      setSidebarActive('sb-anim');
+      view('search');
+      $('s-head').textContent = '🎌 Animation';
+      $('s-sub').textContent = 'Loading…';
+      $('s-grid').innerHTML = '<div class="spin-wrap" style="grid-column:1/-1"><div class="spin"></div><span class="spin-lbl">Loading…</span></div>';
+      document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', +c.dataset.t === 0));
+      const keywords = ['animation', 'animated', 'pixar', 'anime', 'cartoon', 'studio ghibli'];
+      const grid = $('s-grid'); grid.innerHTML = '';
+      let total = 0; const seen = new Set();
+      for (const kw of keywords) {
+        try {
+          const r = await fetch(API + '/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword: kw, subject_type: 0, page: 1, per_page: 24 }) });
+          const d = await r.json();
+          (d.items || []).filter(it => !seen.has(it.subjectId)).forEach(it => { seen.add(it.subjectId); const c = mkCard(it, total * 20); c.style.width = ''; c.dataset.id = it.subjectId; grid.appendChild(c); total++; });
+          $('s-sub').textContent = `${total} results found`;
+        } catch { }
+        if (total >= 150) break;
+      }
+      const pg = $('pagination');
+      if (total >= 20) { pg.style.display = 'flex'; pg.style.justifyContent = 'center'; } else pg.style.display = 'none';
+    }
+
+    /* ───── LOAD MORE ───── */
+    S._pageState = null;
+
+    async function loadMore() {
+      if (!S._pageState) return;
+      const btn = $('load-more-btn');
+      btn.textContent = 'Loading…'; btn.disabled = true;
+      const { keyword, type, page, mode } = S._pageState;
+      try {
+        let newItems = [];
+        if (mode === 'search') {
+          const r = await fetch(API + '/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword, subject_type: type, page, per_page: 24 }) });
+          const d = await r.json(); newItems = d.items || [];
+        } else {
+          const d = await api(`/trending?page=${page}&per_page=24`);
+          newItems = d.items || d.subjectList || [];
+        }
+        const grid = $('s-grid');
+        const existing = new Set([...grid.querySelectorAll('[data-id]')].map(c => c.dataset.id));
+        newItems.filter(it => !existing.has(it.subjectId)).forEach((it, i) => {
+          const c = mkCard(it, i * 20); c.style.width = ''; c.dataset.id = it.subjectId; grid.appendChild(c);
+        });
+        S._pageState.page = page + 1;
+        const total = grid.querySelectorAll('.card').length;
+        $('s-sub').textContent = `${total} results found`;
+        if (!newItems.length || newItems.length < 10) $('pagination').style.display = 'none';
+      } catch { }
+      btn.innerHTML = 'Load More <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>';
+      btn.disabled = false;
+    }
+
+    /* ───── AI ASSISTANT ───── */
+    let aiOpen = false;
+    const aiHistory = [];
+
+    function toggleAI() {
+      aiOpen = !aiOpen;
+      $('ai-panel').classList.toggle('open', aiOpen);
+      if (aiOpen) setTimeout(() => $('ai-input').focus(), 300);
+    }
+    function aiQuick(msg) { $('ai-input').value = msg; sendAI(); }
+    $('ai-input') && $('ai-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendAI(); });
+
+    function aiAddMsg(role, html) {
+      const el = document.createElement('div'); el.className = 'ai-msg ' + role;
+      const ava = document.createElement('div'); ava.className = 'ai-msg-ava'; ava.textContent = role === 'bot' ? '🎬' : 'U';
+      const bubble = document.createElement('div'); bubble.className = 'ai-bubble'; bubble.innerHTML = html;
+      el.appendChild(ava); el.appendChild(bubble);
+      $('ai-messages').appendChild(el);
+      $('ai-messages').scrollTop = $('ai-messages').scrollHeight;
+      return el;
+    }
+    function aiShowTyping() {
+      const el = document.createElement('div'); el.className = 'ai-msg bot'; el.id = 'ai-typing';
+      el.innerHTML = `<div class="ai-msg-ava">🎬</div><div class="ai-bubble"><div class="ai-typing"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div></div>`;
+      $('ai-messages').appendChild(el);
+      $('ai-messages').scrollTop = $('ai-messages').scrollHeight;
+    }
+
+    async function sendAI() {
+      const input = $('ai-input');
+      const msg = input.value.trim(); if (!msg) return;
+      input.value = '';
+      aiAddMsg('user', msg);
+      aiHistory.push({ role: 'user', content: msg });
+      aiShowTyping();
+      try {
+        const currentMovie = S.item
+          ? `${S.item.title} (${S.item.subjectType === 2 ? 'TV Series' : 'Movie'}, ${String(S.item.releaseDate || '').slice(0, 4)})`
+          : null;
+
+        // Call our backend /api/ai/chat — backend handles Groq dual key fallback
+        const res = await fetch('/api/ai/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: aiHistory.slice(-10),
+            current_movie: currentMovie,
+          })
+        });
+
+        const data = await res.json();
+        $('ai-typing')?.remove();
+
+        if (!res.ok) {
+          const errMsg = res.status === 429
+            ? 'Lagi sibuk nih, coba beberapa detik lagi ya! ⏳'
+            : 'Koneksi bermasalah, coba lagi ya! 😅';
+          aiAddMsg('bot', errMsg);
+          return;
+        }
+
+        const reply = data.reply || 'Maaf, ada gangguan.';
+        aiHistory.push({ role: 'assistant', content: reply });
+
+        // Format **Nama Film** → clickable chip
+        const formatted = reply
+          .replace(/\*\*(.*?)\*\*/g, (_, name) =>
+            `<span class="ai-movie-chip" onclick="doSearch('${name.replace(/'/g, "\'")}',0)">🎬 ${name}</span>`)
+          .replace(/\n/g, '<br>');
+        aiAddMsg('bot', formatted);
+      } catch (e) {
+        $('ai-typing')?.remove();
+        aiAddMsg('bot', 'Koneksi bermasalah, coba lagi ya! 😅');
+        console.error('AI error:', e);
+      }
+    }
+
+    // Override goHome/goTrending for sidebar active state
+    const _origGoHome = goHome;
+    window.goHome = function () { setSidebarActive('sb-home'); _origGoHome(); };
+    const _origGoTrending = goTrending;
+    window.goTrending = function () { setSidebarActive('sb-trend'); _origGoTrending(); };
+
+    // Override browseCategory for sidebar + animation
+    const _origBrowseCategory = browseCategory;
+    window.browseCategory = function (type) {
+      if (type === 3) { browseAnimation(); return; }
+      const map = { 1: 'sb-movies', 2: 'sb-tv' };
+      setSidebarActive(map[type] || null);
+      return _origBrowseCategory(type);
+    };
+
+    // Override doSearch to track state for load more
+    const _origDoSearch = doSearch;
+    window.doSearch = async function (q, type = 0) {
+      if (!q && type !== 0) { browseCategory(type); return; }
+      S._pageState = q ? { keyword: q, type, page: 2, mode: 'search' } : { page: 2, mode: 'trending' };
+      await _origDoSearch(q, type);
+      const items = $('s-grid').querySelectorAll('.card').length;
+      const pg = $('pagination');
+      if (items >= 10) { pg.style.display = 'flex'; pg.style.justifyContent = 'center'; }
+      else pg.style.display = 'none';
+      // Add data-id to existing cards for dedup
+      $('s-grid').querySelectorAll('.card:not([data-id])').forEach((c, i) => {
+        const it = c.__item; // not set, ok
+      });
+    };
+
     /* ───── BOOT ───── */
     (async () => {
       try {
         await api('/health');
         toast('CloudMovies ready 🎬', 'ok');
+        // Wire up AI input after DOM is confirmed ready
+        const aiInputEl = $('ai-input');
+        if (aiInputEl) aiInputEl.addEventListener('keydown', e => { if (e.key === 'Enter') sendAI(); });
         loadHome();
       } catch (e) {
         showModal(
@@ -3126,6 +3828,58 @@
       </a>
     </div>
   </footer>
+
+  <!-- AI MOVIE ASSISTANT -->
+  <button id="ai-btn" onclick="toggleAI()" title="AI Movie Assistant">
+    <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+      <path
+        d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM9 14a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z" />
+    </svg>
+  </button>
+
+  <div id="ai-panel">
+    <div class="ai-header">
+      <div class="ai-avatar">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+          <path
+            d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
+        </svg>
+      </div>
+      <div class="ai-header-info">
+        <div class="ai-name">CineAI</div>
+        <div class="ai-status">
+          <div class="ai-status-dot"></div> Movie Assistant
+        </div>
+      </div>
+      <button class="ai-close" onclick="toggleAI()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <div class="ai-messages" id="ai-messages">
+      <div class="ai-msg bot">
+        <div class="ai-msg-ava">🎬</div>
+        <div class="ai-bubble">Halo! Gue <b>CineAI</b>, asisten film kamu. Mau nonton apa hari ini? Tanya aja soal film,
+          minta rekomendasi, atau ceritain mood kamu! 🍿</div>
+      </div>
+    </div>
+    <div class="ai-quick-btns">
+      <button class="ai-quick" onclick="aiQuick('Rekomendasikan film action terbaik')">🎬 Action</button>
+      <button class="ai-quick" onclick="aiQuick('Film apa yang cocok ditonton malam ini?')">🌙 Malam ini</button>
+      <button class="ai-quick" onclick="aiQuick('Rekomendasikan film yang seru dan lucu')">😂 Lucu</button>
+      <button class="ai-quick" onclick="aiQuick('Film horror terbaik yang wajib ditonton')">👻 Horror</button>
+    </div>
+    <div class="ai-input-row">
+      <input class="ai-input" id="ai-input" placeholder="Tanya soal film…" autocomplete="off" />
+      <button class="ai-send" onclick="sendAI()">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M22 2 11 13M22 2 15 22l-4-9-9-4 20-7z" />
+        </svg>
+      </button>
+    </div>
+  </div>
 </body>
 
 </html>

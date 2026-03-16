@@ -25,6 +25,7 @@ from moviebox_api.helpers import get_absolute_url
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("cloudmovies")
 
+
 async def fetch_with_retry(coro_factory, retries=3, base_delay=1.5):
     """Retry a coroutine on 429 with exponential backoff."""
     for attempt in range(retries):
@@ -32,20 +33,24 @@ async def fetch_with_retry(coro_factory, retries=3, base_delay=1.5):
             return await coro_factory()
         except Exception as e:
             if "429" in str(e) and attempt < retries - 1:
-                wait = base_delay * (2 ** attempt)
-                logger.warning(f"429 rate limit, retrying in {wait:.1f}s (attempt {attempt+1}/{retries})")
+                wait = base_delay * (2**attempt)
+                logger.warning(
+                    f"429 rate limit, retrying in {wait:.1f}s (attempt {attempt + 1}/{retries})"
+                )
                 await asyncio.sleep(wait)
             else:
                 raise
     raise RuntimeError("Max retries exceeded")
+
 
 # ── Shared session ─────────────────────────────────────────────────────────────
 _session: Optional[Session] = None
 
 MOVIEBOX_HOST = "https://h5.aoneroom.com"
 
-STREAM_URL   = f"{MOVIEBOX_HOST}/wefeed-h5-bff/web/subject/play"
+STREAM_URL = f"{MOVIEBOX_HOST}/wefeed-h5-bff/web/subject/play"
 DOWNLOAD_URL = f"{MOVIEBOX_HOST}/wefeed-h5-bff/web/subject/download"
+
 
 async def get_session() -> Session:
     global _session
@@ -75,8 +80,14 @@ app.add_middleware(
     expose_headers=["Content-Range", "Accept-Ranges", "Content-Length", "Content-Type"],
 )
 
-BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INDEX_HTML = os.path.join(BASE_DIR, "index.html")
+
+# Include AI router
+from ai_router import router as ai_router
+
+app.include_router(ai_router)
+
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
@@ -91,15 +102,19 @@ def item_to_dict(item) -> dict:
     except Exception:
         d = {}
     for k, v in list(d.items()):
-        if hasattr(v, "__str__") and not isinstance(v, (str, int, float, bool, list, dict, type(None))):
+        if hasattr(v, "__str__") and not isinstance(
+            v, (str, int, float, bool, list, dict, type(None))
+        ):
             d[k] = str(v)
     return d
+
 
 def items_list(items) -> list[dict]:
     return [item_to_dict(i) for i in items]
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
+
 
 @app.get("/api/health")
 async def health():
@@ -112,7 +127,10 @@ async def trending(page: int = 0, per_page: int = 24):
         session = await get_session()
         t = Trending(session, page=page, per_page=per_page)
         model = await t.get_content_model()
-        return {"items": items_list(model.subjectList), "pager": model.pager.model_dump()}
+        return {
+            "items": items_list(model.subjectList),
+            "pager": model.pager.model_dump(),
+        }
     except Exception as e:
         logger.error(f"trending error: {e}")
         raise HTTPException(500, str(e))
@@ -124,13 +142,19 @@ class SearchBody(BaseModel):
     page: int = 1
     per_page: int = 24
 
+
 @app.post("/api/search")
 async def search(body: SearchBody):
     try:
         session = await get_session()
         stype = SubjectType(body.subject_type)
-        s = Search(session, query=body.keyword, subject_type=stype,
-                   page=body.page, per_page=body.per_page)
+        s = Search(
+            session,
+            query=body.keyword,
+            subject_type=stype,
+            page=body.page,
+            per_page=body.per_page,
+        )
         model = await s.get_content_model()
         return {"items": items_list(model.items), "pager": model.pager.model_dump()}
     except Exception as e:
@@ -156,7 +180,7 @@ async def hot():
         h = HotMoviesAndTVSeries(session)
         model = await h.get_content_model()
         return {
-            "movies":    items_list(model.movies),
+            "movies": items_list(model.movies),
             "tv_series": items_list(model.tv_series),
         }
     except Exception as e:
@@ -164,6 +188,7 @@ async def hot():
 
 
 # ── Stream ─────────────────────────────────────────────────────────────────────
+
 
 @app.get("/api/stream/{subject_id}")
 async def stream_info(
@@ -211,48 +236,58 @@ async def stream_info(
             logger.warning(f"caption fetch error: {e}")
             dl_content = {}
 
-
-
         streams = []
         for s in stream_content.get("streams", []):
             raw_url = str(s.get("url", ""))
             res = s.get("resolutions", s.get("resolution", 0))
-            streams.append({
-                "url":        f"/api/video-proxy?url={quote(raw_url, safe='')}",
-                "direct_url": raw_url,
-                "resolution": res,
-                "size":       s.get("size", 0),
-            })
+            streams.append(
+                {
+                    "url": f"/api/video-proxy?url={quote(raw_url, safe='')}",
+                    "direct_url": raw_url,
+                    "resolution": res,
+                    "size": s.get("size", 0),
+                }
+            )
         streams.sort(key=lambda x: x["resolution"], reverse=True)
 
         hls = []
         for h in stream_content.get("hls", []):
             raw_url = str(h.get("url", ""))
-            hls.append({
-                "url":        f"/api/video-proxy?url={quote(raw_url, safe='')}",
-                "direct_url": raw_url,
-                "resolution": h.get("resolution", 0),
-            })
+            hls.append(
+                {
+                    "url": f"/api/video-proxy?url={quote(raw_url, safe='')}",
+                    "direct_url": raw_url,
+                    "resolution": h.get("resolution", 0),
+                }
+            )
 
         # Captions come from /download endpoint (not /play)
         captions = []
         for c in dl_content.get("captions", []):
             raw_sub_url = str(c.get("url", ""))
             # Add Indonesian alias — MovieBox uses "id" or "Indonesian"
-            lan      = c.get("lan", "")
+            lan = c.get("lan", "")
             lan_name = c.get("lanName", "") or lan
-            captions.append({
-                "id":      c.get("id", ""),
-                "lan":     lan,
-                "lanName": lan_name,
-                "url":     f"/api/subtitle-proxy?url={quote(raw_sub_url, safe='')}",
-                "size":    c.get("size", 0),
-                "delay":   c.get("delay", 0),
-            })
+            captions.append(
+                {
+                    "id": c.get("id", ""),
+                    "lan": lan,
+                    "lanName": lan_name,
+                    "url": f"/api/subtitle-proxy?url={quote(raw_sub_url, safe='')}",
+                    "size": c.get("size", 0),
+                    "delay": c.get("delay", 0),
+                }
+            )
 
-        logger.info(f"stream [{subject_id}] se={se} ep={ep}: {len(streams)} streams, {len(captions)} subs ({[c['lan'] for c in captions]})")
-        return {"streams": streams, "captions": captions, "hls": hls,
-                "limited": stream_content.get("limited", False)}
+        logger.info(
+            f"stream [{subject_id}] se={se} ep={ep}: {len(streams)} streams, {len(captions)} subs ({[c['lan'] for c in captions]})"
+        )
+        return {
+            "streams": streams,
+            "captions": captions,
+            "hls": hls,
+            "limited": stream_content.get("limited", False),
+        }
 
     except Exception as e:
         logger.error(f"stream error [{subject_id}]: {e}")
@@ -260,6 +295,7 @@ async def stream_info(
 
 
 # ── Download ───────────────────────────────────────────────────────────────────
+
 
 @app.get("/api/download/{subject_id}")
 async def download_info(
@@ -286,27 +322,34 @@ async def download_info(
         downloads = []
         for f in content.get("downloads", []):
             raw_url = str(f.get("url", ""))
-            downloads.append({
-                "id":         f.get("id", ""),
-                "url":        f"/api/video-proxy?url={quote(raw_url, safe='')}",
-                "direct_url": raw_url,
-                "resolution": f.get("resolution", 0),
-                "size":       f.get("size", 0),
-            })
+            downloads.append(
+                {
+                    "id": f.get("id", ""),
+                    "url": f"/api/video-proxy?url={quote(raw_url, safe='')}",
+                    "direct_url": raw_url,
+                    "resolution": f.get("resolution", 0),
+                    "size": f.get("size", 0),
+                }
+            )
         downloads.sort(key=lambda x: x["resolution"], reverse=True)
 
         captions = []
         for c in content.get("captions", []):
-            captions.append({
-                "id":      c.get("id", ""),
-                "lan":     c.get("lan", ""),
-                "lanName": c.get("lanName", ""),
-                "url":     str(c.get("url", "")),
-                "size":    c.get("size", 0),
-            })
+            captions.append(
+                {
+                    "id": c.get("id", ""),
+                    "lan": c.get("lan", ""),
+                    "lanName": c.get("lanName", ""),
+                    "url": str(c.get("url", "")),
+                    "size": c.get("size", 0),
+                }
+            )
 
-        return {"downloads": downloads, "captions": captions,
-                "limited": content.get("limited", False)}
+        return {
+            "downloads": downloads,
+            "captions": captions,
+            "limited": content.get("limited", False),
+        }
 
     except Exception as e:
         logger.error(f"download error [{subject_id}]: {e}")
@@ -316,12 +359,13 @@ async def download_info(
 # ── Video Proxy — bypasses CDN CORS ───────────────────────────────────────────
 
 VIDEO_HEADERS = {
-    "User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
-    "Referer":         "https://fmoviesunblocked.net/",
-    "Accept":          "*/*",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
+    "Referer": "https://fmoviesunblocked.net/",
+    "Accept": "*/*",
     "Accept-Encoding": "identity",
-    "Connection":      "keep-alive",
+    "Connection": "keep-alive",
 }
+
 
 @app.get("/api/video-proxy")
 async def video_proxy(request: Request, url: str = Query(...)):
@@ -348,10 +392,10 @@ async def video_proxy(request: Request, url: str = Query(...)):
             ct = "text/plain; charset=utf-8"
 
         resp_headers = {
-            "Access-Control-Allow-Origin":  "*",
+            "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "*",
-            "Accept-Ranges":                "bytes",
-            "Cache-Control":                "no-store",
+            "Accept-Ranges": "bytes",
+            "Cache-Control": "no-store",
         }
         for h in ["Content-Length", "Content-Range", "Content-Type"]:
             val = upstream.headers.get(h) or upstream.headers.get(h.lower())
@@ -380,6 +424,7 @@ async def video_proxy(request: Request, url: str = Query(...)):
 
 # ── Subtitle Proxy ─────────────────────────────────────────────────────────────
 
+
 @app.get("/api/subtitle-proxy")
 async def subtitle_proxy(url: str = Query(...)):
     try:
@@ -393,3 +438,10 @@ async def subtitle_proxy(url: str = Query(...)):
         )
     except Exception as e:
         raise HTTPException(500, str(e))
+
+
+if __name__ == "__main__":
+    import uvicorn, os
+
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("backend:app", host="0.0.0.0", port=port)
