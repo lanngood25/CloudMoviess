@@ -1,484 +1,491 @@
 """
-CloudMovies Backend — FastAPI + moviebox-api
-Run: uvicorn backend:app --host 0.0.0.0 --port 8000 --reload
+CloudMovies — LK21 Scraper (Movies Only)
+Search LK21 and extract stream URLs from movie pages.
 """
 
 import asyncio
-import json
 import logging
-import os
-from urllib.parse import quote
-from contextlib import asynccontextmanager
-from typing import Optional, AsyncGenerator
+import re
+from urllib.parse import quote_plus, urljoin, urlparse
 
 import httpx
-from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, HTMLResponse
-from pydantic import BaseModel
-
-from moviebox_api.core import HotMoviesAndTVSeries, Search, SearchSuggestion, Trending
-from moviebox_api.constants import SubjectType
-from moviebox_api.requests import Session
-from moviebox_api.helpers import get_absolute_url
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("cloudmovies")
-
-
-async def fetch_with_retry(coro_factory, retries=3, base_delay=1.5):
-    """Retry a coroutine on 429 with exponential backoff."""
-    for attempt in range(retries):
-        try:
-            return await coro_factory()
-        except Exception as e:
-            if "429" in str(e) and attempt < retries - 1:
-                wait = base_delay * (2**attempt)
-                logger.warning(
-                    f"429 rate limit, retrying in {wait:.1f}s (attempt {attempt + 1}/{retries})"
-                )
-                await asyncio.sleep(wait)
-            else:
-                raise
-    raise RuntimeError("Max retries exceeded")
-
-
-# ── Shared session ─────────────────────────────────────────────────────────────
-_session: Optional[Session] = None
-
-MOVIEBOX_HOST = "https://h5.aoneroom.com"
-
-STREAM_URL = f"{MOVIEBOX_HOST}/wefeed-h5-bff/web/subject/play"
-DOWNLOAD_URL = f"{MOVIEBOX_HOST}/wefeed-h5-bff/web/subject/download"
-
-
-async def get_session() -> Session:
-    global _session
-    if _session is None:
-        _session = Session()
-        await _session.ensure_cookies_are_assigned()
-        logger.info("MovieBox session initialised ✓")
-    return _session
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await get_session()
-    yield
-    if _session:
-        await _session._client.aclose()
-
-
-# ── App ────────────────────────────────────────────────────────────────────────
-app = FastAPI(title="CloudMovies API", lifespan=lifespan)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["Content-Range", "Accept-Ranges", "Content-Length", "Content-Type"],
-)
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-INDEX_HTML = os.path.join(BASE_DIR, "index.html")
-
-# Include AI router
-from ai_router import router as ai_router
-from lk21_scraper import search_lk21_movies, extract_lk21_stream
-
-app.include_router(ai_router)
-
-
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    with open(INDEX_HTML, encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
-
-
-# ── Helpers ────────────────────────────────────────────────────────────────────
-def item_to_dict(item) -> dict:
-    try:
-        d = item.model_dump(mode="json") if hasattr(item, "model_dump") else vars(item)
-    except Exception:
-        d = {}
-    for k, v in list(d.items()):
-        if hasattr(v, "__str__") and not isinstance(
-            v, (str, int, float, bool, list, dict, type(None))
-        ):
-            d[k] = str(v)
-    return d
-
-
-def items_list(items) -> list[dict]:
-    return [item_to_dict(i) for i in items]
-
-
-# ── Routes ─────────────────────────────────────────────────────────────────────
-
-
-@app.get("/api/health")
-async def health():
-    return {"status": "ok", "message": "CloudMovies backend is running 🎬"}
-
-
-@app.get("/api/trending")
-async def trending(page: int = 0, per_page: int = 24):
-    try:
-        session = await get_session()
-        t = Trending(session, page=page, per_page=per_page)
-        model = await t.get_content_model()
-        return {
-            "items": items_list(model.subjectList),
-            "pager": model.pager.model_dump(),
-        }
-    except Exception as e:
-        logger.error(f"trending error: {e}")
-        raise HTTPException(500, str(e))
-
-
-class SearchBody(BaseModel):
-    keyword: str = ""
-    subject_type: int = 0
-    page: int = 1
-    per_page: int = 24
-
-
-@app.post("/api/search")
-async def search(body: SearchBody):
-    try:
-        session = await get_session()
-        stype = SubjectType(body.subject_type)
-        s = Search(
-            session,
-            query=body.keyword,
-            subject_type=stype,
-            page=body.page,
-            per_page=body.per_page,
-        )
-        model = await s.get_content_model()
-        return {"items": items_list(model.items), "pager": model.pager.model_dump()}
-    except Exception as e:
-        logger.error(f"search error: {e}")
-        raise HTTPException(500, str(e))
-
-
-@app.post("/api/search/fallback")
-async def search_fallback(body: SearchBody):
-    """Search LK21 movies when MovieBox has no results."""
-    try:
-        query = body.keyword.strip()
-        if not query:
-            raise HTTPException(400, "keyword required")
-        results = await search_lk21_movies(query, max_results=24)
-        return {"items": results, "source": "lk21", "total": len(results)}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"fallback search error: {e}")
-        raise HTTPException(500, str(e))
-
-
-@app.get("/api/lk21/stream")
-async def lk21_stream(url: str = Query(...)):
-    """
-    Extract direct video stream URL from LK21 movie page.
-    The 'url' param is the LK21 movie page URL.
-    Streams are routed through /api/video-proxy for CORS bypass.
-    """
-    try:
-        data = await extract_lk21_stream(url)
-        # Wrap stream URLs through video proxy
-        for s in data.get("streams", []):
-            raw = s["url"]
-            if raw:
-                s["proxy_url"] = f"/api/video-proxy?url={quote(raw, safe='')}"
-        return data
-    except Exception as e:
-        logger.error(f"lk21 stream error: {e}")
-        raise HTTPException(500, str(e))
-
-
-@app.get("/api/suggest")
-async def suggest(q: str = Query(..., min_length=1)):
-    try:
-        session = await get_session()
-        ss = SearchSuggestion(session)
-        data = await ss.get_content(q)
-        return data
-    except Exception as e:
-        raise HTTPException(500, str(e))
-
-
-@app.get("/api/hot")
-async def hot():
-    try:
-        session = await get_session()
-        h = HotMoviesAndTVSeries(session)
-        model = await h.get_content_model()
-        return {
-            "movies": items_list(model.movies),
-            "tv_series": items_list(model.tv_series),
-        }
-    except Exception as e:
-        raise HTTPException(500, str(e))
-
-
-# ── Stream ─────────────────────────────────────────────────────────────────────
-
-
-@app.get("/api/stream/{subject_id}")
-async def stream_info(
-    subject_id: str,
-    detail_path: str = Query(default=""),
-    subject_type: int = Query(default=1),
-    se: int = 0,
-    ep: int = 0,
-):
-    try:
-        session = await get_session()
-        referer = f"{MOVIEBOX_HOST}/movies/{detail_path}"
-
-        # NOTE: StreamFilesMetadata (/play) has NO captions field
-        #       Captions ONLY come from the /download endpoint
-        actual_se = se if subject_type == 2 else 0
-        actual_ep = ep if subject_type == 2 else 0
-
-        # Fetch stream with retry on 429
-        try:
-            stream_content = await fetch_with_retry(
-                lambda: session.get_with_cookies_from_api(
-                    url=STREAM_URL,
-                    params={"subjectId": subject_id, "se": se, "ep": ep},
-                    headers={"Referer": referer},
-                )
-            )
-        except Exception as e:
-            logger.error(f"stream fetch error: {e}")
-            stream_content = {}
-
-        # Small delay to avoid rate limiting between consecutive requests
-        await asyncio.sleep(0.3)
-
-        # Fetch captions with retry on 429
-        try:
-            dl_content = await fetch_with_retry(
-                lambda: session.get_with_cookies_from_api(
-                    url=DOWNLOAD_URL,
-                    params={"subjectId": subject_id, "se": actual_se, "ep": actual_ep},
-                    headers={"Referer": referer},
-                )
-            )
-        except Exception as e:
-            logger.warning(f"caption fetch error: {e}")
-            dl_content = {}
-
-        streams = []
-        for s in stream_content.get("streams", []):
-            raw_url = str(s.get("url", ""))
-            res = s.get("resolutions", s.get("resolution", 0))
-            streams.append(
-                {
-                    "url": f"/api/video-proxy?url={quote(raw_url, safe='')}",
-                    "direct_url": raw_url,
-                    "resolution": res,
-                    "size": s.get("size", 0),
-                }
-            )
-        streams.sort(key=lambda x: x["resolution"], reverse=True)
-
-        hls = []
-        for h in stream_content.get("hls", []):
-            raw_url = str(h.get("url", ""))
-            hls.append(
-                {
-                    "url": f"/api/video-proxy?url={quote(raw_url, safe='')}",
-                    "direct_url": raw_url,
-                    "resolution": h.get("resolution", 0),
-                }
-            )
-
-        # Captions come from /download endpoint (not /play)
-        captions = []
-        for c in dl_content.get("captions", []):
-            raw_sub_url = str(c.get("url", ""))
-            # Add Indonesian alias — MovieBox uses "id" or "Indonesian"
-            lan = c.get("lan", "")
-            lan_name = c.get("lanName", "") or lan
-            captions.append(
-                {
-                    "id": c.get("id", ""),
-                    "lan": lan,
-                    "lanName": lan_name,
-                    "url": f"/api/subtitle-proxy?url={quote(raw_sub_url, safe='')}",
-                    "size": c.get("size", 0),
-                    "delay": c.get("delay", 0),
-                }
-            )
-
-        logger.info(
-            f"stream [{subject_id}] se={se} ep={ep}: {len(streams)} streams, {len(captions)} subs ({[c['lan'] for c in captions]})"
-        )
-        return {
-            "streams": streams,
-            "captions": captions,
-            "hls": hls,
-            "limited": stream_content.get("limited", False),
-        }
-
-    except Exception as e:
-        logger.error(f"stream error [{subject_id}]: {e}")
-        raise HTTPException(500, str(e))
-
-
-# ── Download ───────────────────────────────────────────────────────────────────
-
-
-@app.get("/api/download/{subject_id}")
-async def download_info(
-    subject_id: str,
-    detail_path: str = Query(default=""),
-    subject_type: int = Query(default=1),
-    se: int = 0,
-    ep: int = 0,
-):
-    try:
-        session = await get_session()
-
-        # Use se=0 ep=0 for movies, actual values for series
-        actual_se = se if subject_type == 2 else 0
-        actual_ep = ep if subject_type == 2 else 0
-
-        referer = f"{MOVIEBOX_HOST}/movies/{detail_path}"
-        content = await session.get_with_cookies_from_api(
-            url=DOWNLOAD_URL,
-            params={"subjectId": subject_id, "se": actual_se, "ep": actual_ep},
-            headers={"Referer": referer},
-        )
-
-        downloads = []
-        for f in content.get("downloads", []):
-            raw_url = str(f.get("url", ""))
-            downloads.append(
-                {
-                    "id": f.get("id", ""),
-                    "url": f"/api/video-proxy?url={quote(raw_url, safe='')}",
-                    "direct_url": raw_url,
-                    "resolution": f.get("resolution", 0),
-                    "size": f.get("size", 0),
-                }
-            )
-        downloads.sort(key=lambda x: x["resolution"], reverse=True)
-
-        captions = []
-        for c in content.get("captions", []):
-            captions.append(
-                {
-                    "id": c.get("id", ""),
-                    "lan": c.get("lan", ""),
-                    "lanName": c.get("lanName", ""),
-                    "url": str(c.get("url", "")),
-                    "size": c.get("size", 0),
-                }
-            )
-
-        return {
-            "downloads": downloads,
-            "captions": captions,
-            "limited": content.get("limited", False),
-        }
-
-    except Exception as e:
-        logger.error(f"download error [{subject_id}]: {e}")
-        raise HTTPException(500, str(e))
-
-
-# ── Video Proxy — bypasses CDN CORS ───────────────────────────────────────────
-
-VIDEO_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
-    "Referer": "https://fmoviesunblocked.net/",
-    "Accept": "*/*",
-    "Accept-Encoding": "identity",
-    "Connection": "keep-alive",
+from bs4 import BeautifulSoup
+
+logger = logging.getLogger("cloudmovies.lk21")
+
+LK21_URL = "https://tv9.lk21official.cc"
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 Chrome/124 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+    "Accept-Language": "id-ID,id;q=0.9,en;q=0.7",
+    "Referer": LK21_URL + "/",
 }
 
 
-@app.get("/api/video-proxy")
-async def video_proxy(request: Request, url: str = Query(...)):
-    """Streams CDN video through localhost — fixes browser CORS. Supports Range for seeking."""
-    if not url.startswith("http"):
-        raise HTTPException(400, "Invalid URL")
+def _client(referer=None):
+    h = dict(HEADERS)
+    if referer:
+        h["Referer"] = referer
+    return httpx.AsyncClient(
+        headers=h,
+        follow_redirects=True,
+        timeout=httpx.Timeout(connect=12, read=25, write=10, pool=10),
+    )
 
-    req_headers = dict(VIDEO_HEADERS)
-    if rng := request.headers.get("range"):
-        req_headers["Range"] = rng
 
+def _extract_year(text):
+    m = re.search(r"(19|20)\d{2}", text)
+    return m.group(0) if m else ""
+
+
+def _extract_rating(text):
+    m = re.search(r"(\d+\.?\d*)\s*/\s*10", text)
+    if m:
+        return float(m.group(1))
+    m2 = re.search(r"(\d+\.\d+)", text)
+    return float(m2.group(1)) if m2 else 0.0
+
+
+# ── SEARCH ────────────────────────────────────────────────────────────────────
+
+
+def _make_slug(title: str, year: str = "") -> str:
+    """Convert title to LK21 URL slug, e.g. 'Battleship 2012' → 'battleship-2012'"""
+    slug = title.lower().strip()
+    slug = re.sub(r"[^a-z0-9\s-]", "", slug)
+    slug = re.sub(r"\s+", "-", slug).strip("-")
+    if year and year not in slug:
+        slug = f"{slug}-{year}"
+    return slug
+
+
+async def _fetch_lk21_page(url: str) -> dict | None:
+    """Fetch LK21 page, return metadata if it's a real movie page."""
     try:
-        client = httpx.AsyncClient(
-            follow_redirects=True,
-            timeout=httpx.Timeout(connect=15, read=120, write=15, pool=15),
-        )
-        upstream = await client.send(
-            client.build_request("GET", url, headers=req_headers),
-            stream=True,
-        )
+        async with _client() as client:
+            r = await client.get(url, timeout=10)
+            if r.status_code != 200:
+                return None
+            soup = BeautifulSoup(r.text, "html.parser")
 
-        ct = upstream.headers.get("content-type", "video/mp4")
-        if url.endswith(".srt") or url.endswith(".vtt"):
-            ct = "text/plain; charset=utf-8"
+            # Reject homepage/search page
+            title_el = soup.select_one("h1.entry-title, h1.judul-film, .film-title, h1")
+            if not title_el:
+                return None
+            found_title = re.sub(r"\s+", " ", title_el.get_text()).strip()
+            reject = [
+                "nonton film",
+                "layarkaca21",
+                "lk21",
+                "sub indo gratis",
+                "streaming film",
+            ]
+            if any(p in found_title.lower() for p in reject) or len(found_title) < 2:
+                return None
 
-        resp_headers = {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "*",
-            "Accept-Ranges": "bytes",
-            "Cache-Control": "no-store",
-        }
-        for h in ["Content-Length", "Content-Range", "Content-Type"]:
-            val = upstream.headers.get(h) or upstream.headers.get(h.lower())
-            if val:
-                resp_headers[h] = val
+            img_el = soup.select_one(".poster img, .thumb img, img[class*=poster]")
+            poster = ""
+            if img_el:
+                poster = img_el.get("src") or img_el.get("data-src", "")
+                if poster and poster.startswith("//"):
+                    poster = "https:" + poster
 
-        async def streamer() -> AsyncGenerator[bytes, None]:
+            year_el = soup.select_one(".year, .gmr-movie-on, time")
+            page_year = _extract_year(
+                year_el.get_text() if year_el else ""
+            ) or _extract_year(soup.get_text()[:1500])
+            score_el = soup.select_one(".imdb, .rating, [itemprop=ratingValue]")
+            score = _extract_rating(score_el.get_text() if score_el else "")
+            desc_el = soup.select_one(
+                ".synopsis p, .entry-content p, [itemprop=description]"
+            )
+            desc = (
+                re.sub(r"\s+", " ", desc_el.get_text()).strip()[:300] if desc_el else ""
+            )
+
+            logger.info(f"LK21 direct hit: {url} → {found_title}")
+            return {
+                "subjectId": f"lk21_{abs(hash(url)) % 10**10}",
+                "title": found_title,
+                "description": desc,
+                "releaseDate": f"{page_year}-01-01" if page_year else "2000-01-01",
+                "duration": 0,
+                "genre": "Movie",
+                "countryName": "",
+                "imdbRatingValue": score,
+                "subjectType": 1,
+                "detailPath": "",
+                "corner": "",
+                "appointmentCnt": 0,
+                "appointmentDate": "",
+                "stafflist": None,
+                "subtitles": "id",
+                "hasResource": True,
+                "source": "lk21",
+                "sourceUrl": url,
+                "sourceName": "LK21",
+                "cover": {
+                    "url": poster,
+                    "thumbnail": poster,
+                    "width": 0,
+                    "height": 0,
+                    "size": 0,
+                    "format": "",
+                    "blurHash": "",
+                    "avgHueLight": "",
+                    "avgHueDark": "",
+                    "id": "0",
+                },
+            }
+    except Exception as e:
+        logger.debug(f"LK21 page miss {url}: {e}")
+    return None
+
+
+async def _try_direct_url(title: str, year: str) -> dict | None:
+    """
+    Try a few smart URL variants for a movie title.
+    Only tries slug WITH known year — no year brute force.
+    """
+    base_slug = _make_slug(title, "")
+
+    # Only try if we have a year
+    if year:
+        url = f"{LK21_URL}/{base_slug}-{year}"
+        result = await _fetch_lk21_page(url)
+        if result:
+            return result
+
+    # Try without year
+    url_bare = f"{LK21_URL}/{base_slug}"
+    return await _fetch_lk21_page(url_bare)
+
+
+async def search_lk21_movies(query: str, max_results: int = 20) -> list:
+    """Search LK21, return movies only (no series). Also tries page 2."""
+    # Fetch page 1 and page 2 in parallel
+    url1 = f"{LK21_URL}/?s={quote_plus(query)}"
+    url2 = f"{LK21_URL}/page/2/?s={quote_plus(query)}"
+    results = []
+    all_html = []
+    try:
+        async with _client() as client:
+            r1, r2 = await asyncio.gather(
+                client.get(url1),
+                client.get(url2),
+                return_exceptions=True,
+            )
+        for r in [r1, r2]:
+            if isinstance(r, Exception):
+                continue
+            if r.status_code == 200:
+                all_html.append(r.text)
+
+        if not all_html:
+            return []
+
+        # Also try direct URL for query as a title (e.g. "battleship 2012")
+        year_match = re.search(r"(19|20)\d{2}", query)
+        year = year_match.group(0) if year_match else ""
+        title_part = re.sub(r"(19|20)\d{2}", "", query).strip()
+        direct_task = _try_direct_url(title_part or query, year)
+
+        # Also search LK21 with year appended if not already in query
+        extra_search_urls = []
+        if not year and query:
+            # Try searching "query year" for common years (last 15 years)
+            import datetime
+
+            cur_year = datetime.datetime.now().year
+            for y in range(cur_year, cur_year - 15, -1):
+                extra_search_urls.append(
+                    f"{LK21_URL}/?s={quote_plus(query + ' ' + str(y))}"
+                )
+
+        soup_pages = [BeautifulSoup(h, "html.parser") for h in all_html]
+
+        cards = []
+        for soup in soup_pages:
+            page_cards = (
+                soup.select("article.item")
+                or soup.select(".movies-list article")
+                or soup.select("article")
+                or soup.select(".item")
+            )
+            cards.extend(page_cards)
+
+        series_keywords = [
+            "season",
+            "episode",
+            "s01",
+            "s02",
+            "eps",
+            "the series",
+            "complete series",
+        ]
+
+        for card in cards:
+            if len(results) >= max_results:
+                break
             try:
-                async for chunk in upstream.aiter_bytes(65536):
-                    yield chunk
-            finally:
-                await upstream.aclose()
-                await client.aclose()
+                title_el = card.select_one("h3, h2, .entry-title, .title")
+                if not title_el:
+                    continue
+                title = re.sub(r"\s+", " ", title_el.get_text()).strip()
+                if not title:
+                    continue
 
-        return StreamingResponse(
-            streamer(),
-            status_code=upstream.status_code,
-            media_type=ct,
-            headers=resp_headers,
-        )
+                # Skip series
+                title_lower = title.lower()
+                if any(kw in title_lower for kw in series_keywords):
+                    continue
+                if re.search(r"\bS\d{2}E\d{2}\b", title, re.I):
+                    continue
 
+                link_el = card.select_one("a[href]")
+                if not link_el:
+                    continue
+                page_url = link_el["href"]
+                if not page_url.startswith("http"):
+                    page_url = urljoin(LK21_URL, page_url)
+
+                img_el = card.select_one("img")
+                poster = ""
+                if img_el:
+                    poster = (
+                        img_el.get("src")
+                        or img_el.get("data-src")
+                        or img_el.get("data-lazy-src")
+                        or ""
+                    )
+                    if poster.startswith("//"):
+                        poster = "https:" + poster
+
+                year = _extract_year(card.get_text())
+                score_el = card.select_one(".rating, .imdb, .score")
+                score = _extract_rating(score_el.get_text() if score_el else "")
+                genre_els = card.select(".genre a, .categories a, .cat a")
+                genres = ", ".join(g.get_text(strip=True) for g in genre_els[:3])
+
+                results.append(
+                    {
+                        "subjectId": f"lk21_{abs(hash(page_url)) % 10**10}",
+                        "title": title,
+                        "description": "",
+                        "releaseDate": f"{year}-01-01" if year else "2000-01-01",
+                        "duration": 0,
+                        "genre": genres or "Movie",
+                        "countryName": "",
+                        "imdbRatingValue": score,
+                        "subjectType": 1,
+                        "detailPath": "",
+                        "corner": "",
+                        "appointmentCnt": 0,
+                        "appointmentDate": "",
+                        "stafflist": None,
+                        "subtitles": "id",
+                        "hasResource": True,
+                        "source": "lk21",
+                        "sourceUrl": page_url,
+                        "sourceName": "LK21",
+                        "cover": {
+                            "url": poster,
+                            "thumbnail": poster,
+                            "width": 0,
+                            "height": 0,
+                            "size": 0,
+                            "format": "",
+                            "blurHash": "",
+                            "avgHueLight": "",
+                            "avgHueDark": "",
+                            "id": "0",
+                        },
+                    }
+                )
+            except Exception as card_err:
+                logger.debug(f"Card parse error: {card_err}")
+                continue
+
+        # Try direct URL lookup in parallel
+        direct = await direct_task
+        if direct:
+            existing = {r["title"].lower() for r in results}
+            if direct["title"].lower() not in existing:
+                results.insert(0, direct)  # put at top
+
+        logger.info(f"LK21 search '{query}': {len(results)} movies")
     except Exception as e:
-        logger.error(f"video-proxy error: {e}")
-        raise HTTPException(502, str(e))
+        logger.error(f"LK21 search error: {e}")
+
+    return results
 
 
-# ── Subtitle Proxy ─────────────────────────────────────────────────────────────
+# ── STREAM EXTRACTION ─────────────────────────────────────────────────────────
 
 
-@app.get("/api/subtitle-proxy")
-async def subtitle_proxy(url: str = Query(...)):
+async def extract_lk21_stream(page_url: str) -> dict:
+    """Visit LK21 movie page, find all embed/direct video URLs."""
+    streams = []
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=15) as client:
-            r = await client.get(url, headers={"User-Agent": "Mozilla/5.0"})
-            r.raise_for_status()
-        return StreamingResponse(
-            iter([r.content]),
-            media_type="text/plain; charset=utf-8",
-            headers={"Access-Control-Allow-Origin": "*"},
+        async with _client(referer=LK21_URL) as client:
+            r = await client.get(page_url)
+            if r.status_code != 200:
+                return {"streams": [], "captions": []}
+            soup = BeautifulSoup(r.text, "html.parser")
+            html = r.text
+
+        # 1. Direct mp4/m3u8 in page source
+        direct = re.findall(r'https?://[^\s\'"<>]+\.(?:mp4|m3u8)[^\s\'"<>]*', html)
+        for u in dict.fromkeys(direct):
+            if any(skip in u for skip in ["thumbnail", "poster", ".css", "cdn.js"]):
+                continue
+            label = "1080p" if "1080" in u else "720p" if "720" in u else "HD"
+            streams.append(
+                {"url": u, "resolution": label, "label": label, "source": "direct"}
+            )
+            if len(streams) >= 3:
+                break
+
+        # 2. JS file/src/source keys
+        js_urls = re.findall(
+            r'(?:file|src|source)\s*:\s*["\']( https?://[^"\']+)["\']', html
         )
+        for u in dict.fromkeys(js_urls):
+            u = u.strip()
+            if u and u not in {s["url"] for s in streams}:
+                label = "1080p" if "1080" in u else "720p" if "720" in u else "HD"
+                streams.append(
+                    {"url": u, "resolution": label, "label": label, "source": "js"}
+                )
+
+        # 3. Iframes
+        iframes = soup.select("iframe[src], iframe[data-src]")
+        embed_urls = []
+        skip_domains = ["google.com/maps", "facebook.com", "twitter.com", "youtube.com"]
+        for iframe in iframes:
+            src = iframe.get("src") or iframe.get("data-src", "")
+            if (
+                src
+                and src.startswith("http")
+                and not any(d in src for d in skip_domains)
+            ):
+                embed_urls.append(src)
+
+        # 4. Resolve embeds (max 4 to avoid rate limits)
+        resolved = await asyncio.gather(
+            *[_resolve_embed(eu, page_url) for eu in embed_urls[:4]],
+            return_exceptions=True,
+        )
+        for res in resolved:
+            if isinstance(res, list):
+                streams.extend(res)
+
+        # Deduplicate
+        seen = set()
+        unique = []
+        for s in streams:
+            if s["url"] not in seen:
+                seen.add(s["url"])
+                unique.append(s)
+
+        logger.info(f"LK21 extract '{page_url}': {len(unique)} streams")
+        return {"streams": unique[:6], "captions": []}
+
     except Exception as e:
-        raise HTTPException(500, str(e))
+        logger.error(f"LK21 extract error: {e}")
+        return {"streams": [], "captions": []}
 
 
-if __name__ == "__main__":
-    import uvicorn, os
+async def _resolve_embed(embed_url: str, referer: str) -> list:
+    domain = urlparse(embed_url).netloc.lower()
+    try:
+        if "streamtape" in domain:
+            return await _resolve_streamtape(embed_url)
+        elif "dood" in domain:
+            return await _resolve_doodstream(embed_url)
+        else:
+            return await _resolve_generic(embed_url, referer)
+    except Exception as e:
+        logger.debug(f"Embed resolve error {embed_url}: {e}")
+        return []
 
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("backend:app", host="0.0.0.0", port=port)
+
+async def _resolve_streamtape(url: str) -> list:
+    try:
+        async with _client(referer="https://streamtape.com") as c:
+            r = await c.get(url, timeout=10)
+            m = re.search(r"(streamtape\.com/get_video\?[^\s\"'<>]+)", r.text)
+            if m:
+                return [
+                    {
+                        "url": "https://" + m.group(1),
+                        "resolution": "HD",
+                        "label": "HD",
+                        "source": "streamtape",
+                    }
+                ]
+            m2 = re.search(
+                r'(?:file|src)\s*[=:]\s*["\']( https?://[^"\']+)["\']', r.text
+            )
+            if m2:
+                return [
+                    {
+                        "url": m2.group(1).strip(),
+                        "resolution": "HD",
+                        "label": "HD",
+                        "source": "streamtape",
+                    }
+                ]
+    except Exception as e:
+        logger.debug(f"Streamtape error: {e}")
+    return []
+
+
+async def _resolve_doodstream(url: str) -> list:
+    try:
+        async with _client(referer="https://dood.to") as c:
+            r = await c.get(url, timeout=10)
+            m = re.search(r"/pass_md5/([^\s\"'<>&]+)", r.text)
+            if m:
+                pass_url = "https://dood.to/pass_md5/" + m.group(1)
+                r2 = await c.get(pass_url, timeout=10)
+                token_m = re.search(r"token=([^\s\"'&<>]+)", r.text)
+                token = ("?token=" + token_m.group(1)) if token_m else ""
+                video_url = r2.text.strip() + token
+                if video_url.startswith("http"):
+                    return [
+                        {
+                            "url": video_url,
+                            "resolution": "HD",
+                            "label": "HD",
+                            "source": "dood",
+                        }
+                    ]
+    except Exception as e:
+        logger.debug(f"Doodstream error: {e}")
+    return []
+
+
+async def _resolve_generic(url: str, referer: str) -> list:
+    try:
+        async with _client(referer=referer) as c:
+            r = await c.get(url, timeout=12)
+            found = re.findall(r'https?://[^\s\'"<>]+\.(?:m3u8|mp4)[^\s\'"<>]*', r.text)
+            streams = []
+            for u in dict.fromkeys(found):
+                if any(skip in u for skip in ["thumbnail", "poster", ".css"]):
+                    continue
+                label = "1080p" if "1080" in u else "720p" if "720" in u else "HD"
+                streams.append(
+                    {"url": u, "resolution": label, "label": label, "source": "embed"}
+                )
+                if len(streams) >= 3:
+                    break
+            return streams
+    except Exception as e:
+        logger.debug(f"Generic embed error: {e}")
+    return []
