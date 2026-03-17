@@ -55,8 +55,9 @@ async def _fetch(path: str) -> list:
 async def get_countries():
     """All countries that have at least 1 channel, sorted by name."""
     countries = await _fetch("countries.json")
-    result = [c for c in countries if c.get("channels", 0) > 0]
-    result.sort(key=lambda c: c.get("name", ""))
+    # iptv-org countries.json has no "channels" count field,
+    # so we just return all countries sorted by name
+    result = sorted(countries, key=lambda c: c.get("name", ""))
     return result
 
 

@@ -162,7 +162,63 @@ async def search(body: SearchBody):
         model = await s.get_content_model()
         return {"items": items_list(model.items), "pager": model.pager.model_dump()}
     except Exception as e:
+        err_str = str(e).lower()
+        # Return empty result instead of 500 when keyword yields no results
+        if "empty" in err_str or "no result" in err_str or "not found" in err_str:
+            logger.warning(f"search empty [{body.keyword}]: {e}")
+            return {
+                "items": [],
+                "pager": {"total": 0, "page": body.page, "perPage": body.per_page},
+            }
         logger.error(f"search error: {e}")
+        raise HTTPException(500, str(e))
+
+
+@app.get("/api/browse")
+async def browse(
+    subject_type: int = Query(default=0, description="0=all, 1=movie, 2=series"),
+    page: int = Query(default=0),
+    per_page: int = Query(default=48),
+):
+    """
+    Browse content by type using trending endpoint.
+    Fetches multiple pages and optionally filters by subjectType.
+    Returns up to per_page items from page N.
+    """
+    try:
+        session = await get_session()
+        collected = []
+        seen = set()
+        # Fetch enough trending pages to fill request
+        for p in range(page, page + 6):
+            try:
+                t = Trending(session, page=p, per_page=48)
+                model = await t.get_content_model()
+                items = model.subjectList or []
+                if not items:
+                    break
+                for it in items:
+                    sid = getattr(it, "subjectId", None) or str(it)
+                    if sid in seen:
+                        continue
+                    seen.add(sid)
+                    if (
+                        subject_type == 0
+                        or getattr(it, "subjectType", 0) == subject_type
+                    ):
+                        collected.append(it)
+                if len(collected) >= per_page:
+                    break
+            except Exception:
+                break
+        return {
+            "items": items_list(collected[:per_page]),
+            "page": page,
+            "per_page": per_page,
+            "has_more": len(collected) >= per_page,
+        }
+    except Exception as e:
+        logger.error(f"browse error: {e}")
         raise HTTPException(500, str(e))
 
 

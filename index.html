@@ -2157,6 +2157,61 @@
       margin-left: auto
     }
 
+    /* ── CHANNEL SEARCH ── */
+    .ch-search-wrap {
+      padding: 0 40px 16px;
+      display: none
+    }
+
+    .ch-search-wrap.show {
+      display: block
+    }
+
+    .ch-search-input {
+      width: 100%;
+      max-width: 480px;
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 10px 18px 10px 42px;
+      font-size: .9rem;
+      color: var(--text);
+      outline: none;
+      transition: all .3s;
+      font-family: 'Outfit', sans-serif
+    }
+
+    .ch-search-input:focus {
+      border-color: var(--red);
+      background: rgba(229, 9, 20, .06)
+    }
+
+    .ch-search-input::placeholder {
+      color: var(--text3)
+    }
+
+    .ch-search-box {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      max-width: 480px
+    }
+
+    .ch-search-box svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text3);
+      pointer-events: none
+    }
+
+    @media(max-width:768px) {
+      .ch-search-wrap {
+        padding: 0 16px 16px
+      }
+    }
+
     /* ── FOOTER ── */
     #site-footer {
       text-align: center;
@@ -2505,6 +2560,16 @@
         id="channels-title">Channels</div>
       <div style="font-size:.85rem;color:var(--text2);margin-bottom:16px" id="channels-sub"></div>
     </div>
+    <div class="ch-search-wrap" id="ch-search-wrap">
+      <div class="ch-search-box">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+        <input class="ch-search-input" id="ch-search" type="text" placeholder="Cari channel…" autocomplete="off"
+          oninput="filterChannels(this.value)" />
+      </div>
+    </div>
     <div class="channel-grid" id="channel-grid"></div>
   </div>
 
@@ -2791,6 +2856,9 @@
 
     /* ── SEARCH ── */
     let sTmr;
+    // browse state for load more
+    let _browseState = { q: '', type: 0, page: 0, mode: 'browse' };
+
     async function doSearch(q, type = 0) {
       S.query = q; S.qType = type;
       if (type === 1) setSbActive('sb-movies'); else if (type === 2) setSbActive('sb-tv');
@@ -2799,17 +2867,105 @@
       $('s-sub').textContent = 'Loading…';
       $('s-grid').innerHTML = '<div class="spin-wrap" style="grid-column:1/-1"><div class="spin"></div><span class="spin-lbl">Fetching…</span></div>';
       document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', +c.dataset.t === type));
+
       try {
-        let data;
-        if (!q && type === 0) data = await api('/trending?page=0&per_page=48');
-        else { const r = await fetch(API + '/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword: q || '', subject_type: type, page: 1, per_page: 48 }) }); data = await r.json() }
-        const items = data.items || data.subjectList || [];
-        $('s-sub').textContent = `${items.length} results found`;
+        let items = [];
+
+        if (q) {
+          // Keyword search — fetch 3 pages in parallel for more results
+          const pages = await Promise.all([1, 2, 3, 4].map(page =>
+            fetch(API + '/search', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keyword: q, subject_type: type, page, per_page: 48 })
+            })
+              .then(r => r.json()).catch(() => ({ items: [] }))
+          ));
+          const seen = new Set();
+          pages.forEach(d => {
+            (d.items || []).forEach(it => {
+              if (!seen.has(it.subjectId)) { seen.add(it.subjectId); items.push(it) }
+            });
+          });
+          _browseState = { q, type, page: 5, mode: 'search' };
+        } else {
+          // Category/trending browse — use /api/browse (multi-page trending)
+          const data = await api(`/browse?subject_type=${type}&page=0&per_page=48`);
+          items = data.items || [];
+          _browseState = { q: '', type, page: 1, mode: 'browse', hasMore: data.has_more };
+        }
+
+        $('s-sub').textContent = `${items.length} results loaded`;
         const grid = $('s-grid');
         if (!items.length) { grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>No Results</h3><p>Try a different keyword.</p></div>`; return }
         grid.innerHTML = '';
-        items.forEach((it, i) => { const c = mkCard(it, i * 30); c.style.width = ''; grid.appendChild(c) });
+        items.forEach((it, i) => { const c = mkCard(it, i * 20); c.style.width = ''; grid.appendChild(c) });
+
+        // Show load more button
+        renderLoadMore();
       } catch (e) { $('s-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Error</h3><p>${e.message}</p></div>` }
+    }
+
+    function renderLoadMore() {
+      // Remove existing load more
+      const existing = document.getElementById('load-more-wrap');
+      if (existing) existing.remove();
+      const wrap = document.createElement('div');
+      wrap.id = 'load-more-wrap';
+      wrap.style.cssText = 'text-align:center;padding:28px 40px 60px';
+      wrap.innerHTML = `<button class="btn-ghost" style="padding:12px 32px;font-size:.9rem" onclick="loadMoreResults()">Load More <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>`;
+      // Append after grid
+      const grid = $('s-grid');
+      grid.parentNode.insertBefore(wrap, grid.nextSibling);
+    }
+
+    async function loadMoreResults() {
+      const btn = document.querySelector('#load-more-wrap button');
+      if (btn) { btn.disabled = true; btn.textContent = 'Loading…' }
+      try {
+        const { q, type, page, mode } = _browseState;
+        let newItems = [];
+
+        if (mode === 'search' && q) {
+          const pages = await Promise.all([0, 1, 2].map(offset =>
+            fetch(API + '/search', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keyword: q, subject_type: type, page: page + offset, per_page: 48 })
+            })
+              .then(r => r.json()).catch(() => ({ items: [] }))
+          ));
+          const seen = new Set([...document.querySelectorAll('#s-grid .card')].map(c => c.dataset.sid).filter(Boolean));
+          pages.forEach(d => {
+            (d.items || []).forEach(it => {
+              if (!seen.has(it.subjectId)) { seen.add(it.subjectId); newItems.push(it) }
+            });
+          });
+          _browseState.page = page + 3;
+        } else {
+          const data = await api(`/browse?subject_type=${type}&page=${page}&per_page=48`);
+          newItems = data.items || [];
+          _browseState.page = page + 1;
+          _browseState.hasMore = data.has_more;
+        }
+
+        if (!newItems.length) {
+          const wrap = document.getElementById('load-more-wrap');
+          if (wrap) wrap.innerHTML = '<p style="color:var(--text3);font-size:.85rem">Semua film sudah dimuat</p>';
+          return;
+        }
+
+        const grid = $('s-grid');
+        const existing = new Set([...grid.querySelectorAll('.card')].map(c => c.dataset.sid).filter(Boolean));
+        newItems.forEach((it, i) => {
+          if (existing.has(it.subjectId)) return;
+          const c = mkCard(it, i * 20); c.style.width = ''; c.dataset.sid = it.subjectId; grid.appendChild(c);
+        });
+        const total = grid.querySelectorAll('.card').length;
+        $('s-sub').textContent = `${total} results loaded`;
+
+        if (btn) { btn.disabled = false; btn.innerHTML = 'Load More <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>' }
+      } catch (e) {
+        if (btn) { btn.disabled = false; btn.textContent = 'Load More' }
+      }
     }
     function filterType(el, t) { document.querySelectorAll('.chip').forEach(c => c.classList.remove('on')); el.classList.add('on'); doSearch(S.query, t) }
 
@@ -3122,6 +3278,8 @@
       }
     }
 
+    let _allLoadedChannels = [];
+
     async function loadCountryChannels(country, card) {
       document.querySelectorAll('.country-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
@@ -3132,10 +3290,11 @@
       $('channels-title').textContent = `${COUNTRY_FLAGS[country.code] || '🌐'} ${country.name}`;
       $('channels-sub').textContent = 'Loading channels…';
       $('channel-grid').innerHTML = '<div class="spin-wrap" style="grid-column:1/-1"><div class="spin"></div><span class="spin-lbl">Loading channels…</span></div>';
+      $('ch-search-wrap').classList.remove('show');
+      $('ch-search').value = '';
       $('channel-grid').scrollIntoView({ behavior: 'smooth' });
 
       try {
-        // Satu endpoint — backend sudah gabungkan channels + streams + cache
         const res = await fetch(`/api/iptv/channels-with-streams?country=${country.code}`);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const channels = await res.json();
@@ -3146,21 +3305,35 @@
           return;
         }
 
-        const grid = $('channel-grid'); grid.innerHTML = '';
-        channels.forEach(ch => {
-          const c2 = document.createElement('div');
-          c2.className = 'ch-card';
-          c2.id = 'ch-' + ch.id.replace(/[^a-z0-9]/gi, '_');
-          c2.innerHTML = `<img class="ch-logo" src="${ch.logo || ''}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23141428\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'16\' fill=\'%23555\' text-anchor=\'middle\' dy=\'.35em\'%3E📺%3C/text%3E%3C/svg%3E'"/><div class="ch-info"><div class="ch-name">${ch.name}</div><div class="ch-cat">${ch.categories?.join(', ') || 'General'}</div></div><div class="ch-live-dot"></div>`;
-          // stream_url sudah ada langsung dari backend response
-          c2.onclick = () => playLiveChannel(ch, ch.stream_url, c2);
-          grid.appendChild(c2);
-        });
-
+        _allLoadedChannels = channels;
+        renderChannels(channels);
         $('channels-sub').textContent = `${channels.length} channels dengan stream aktif`;
+        $('ch-search-wrap').classList.add('show');
       } catch (e) {
         $('channel-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Error</h3><p>${e.message}</p></div>`;
       }
+    }
+
+    function renderChannels(channels) {
+      const grid = $('channel-grid'); grid.innerHTML = '';
+      channels.forEach(ch => {
+        const c2 = document.createElement('div');
+        c2.className = 'ch-card';
+        c2.id = 'ch-' + ch.id.replace(/[^a-z0-9]/gi, '_');
+        c2.innerHTML = `<img class="ch-logo" src="${ch.logo || ''}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23141428\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'16\' fill=\'%23555\' text-anchor=\'middle\' dy=\'.35em\'%3E📺%3C/text%3E%3C/svg%3E'"/><div class="ch-info"><div class="ch-name">${ch.name}</div><div class="ch-cat">${ch.categories?.join(', ') || 'General'}</div></div><div class="ch-live-dot"></div>`;
+        c2.onclick = () => playLiveChannel(ch, ch.stream_url, c2);
+        grid.appendChild(c2);
+      });
+    }
+
+    function filterChannels(q) {
+      if (!_allLoadedChannels.length) return;
+      const keyword = q.toLowerCase().trim();
+      const filtered = keyword
+        ? _allLoadedChannels.filter(ch => ch.name.toLowerCase().includes(keyword) || (ch.categories || []).some(c => c.toLowerCase().includes(keyword)))
+        : _allLoadedChannels;
+      renderChannels(filtered);
+      $('channels-sub').textContent = `${filtered.length} channels${keyword ? ' ditemukan' : ' dengan stream aktif'}`;
     }
 
     function playLiveChannel(ch, streamUrl, card) {
