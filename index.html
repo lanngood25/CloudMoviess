@@ -3,20 +3,19 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>CloudMovies — Stream & Download</title>
   <link
     href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=Cinzel:wght@700&display=swap"
     rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
   <style>
-    /* ===== RESET & VARIABLES ===== */
     *,
     *::before,
     *::after {
       box-sizing: border-box;
       margin: 0;
-      padding: 0;
+      padding: 0
     }
 
     :root {
@@ -27,19 +26,19 @@
       --card2: #161630;
       --red: #e50914;
       --red2: #ff2230;
-      --red-dim: rgba(229, 9, 20, 0.14);
-      --red-glow: rgba(229, 9, 20, 0.4);
+      --red-dim: rgba(229, 9, 20, .14);
+      --red-glow: rgba(229, 9, 20, .4);
       --gold: #f5a623;
       --text: #f0f0ff;
       --text2: #9090b0;
       --text3: #4a4a6a;
-      --border: rgba(255, 255, 255, 0.07);
+      --border: rgba(255, 255, 255, .07);
       --radius: 12px;
       --r2: 20px;
     }
 
     html {
-      scroll-behavior: smooth;
+      scroll-behavior: smooth
     }
 
     body {
@@ -47,12 +46,12 @@
       color: var(--text);
       font-family: 'Outfit', sans-serif;
       min-height: 100vh;
-      overflow-x: hidden;
+      overflow-x: hidden
     }
 
     a {
       color: inherit;
-      text-decoration: none;
+      text-decoration: none
     }
 
     button {
@@ -60,29 +59,29 @@
       border: none;
       background: none;
       font-family: inherit;
-      color: inherit;
+      color: inherit
     }
 
     input,
     textarea {
-      font-family: inherit;
+      font-family: inherit
     }
 
     ::-webkit-scrollbar {
       width: 4px;
-      height: 4px;
+      height: 4px
     }
 
     ::-webkit-scrollbar-track {
-      background: var(--bg);
+      background: var(--bg)
     }
 
     ::-webkit-scrollbar-thumb {
       background: var(--red);
-      border-radius: 4px;
+      border-radius: 4px
     }
 
-    /* ──────────── NAVBAR ──────────── */
+    /* ── NAVBAR ── */
     #navbar {
       position: fixed;
       top: 0;
@@ -91,13 +90,29 @@
       z-index: 9999;
       display: flex;
       align-items: center;
-      gap: 20px;
-      padding: 0 40px;
+      gap: 16px;
+      padding: 0 24px;
       height: 66px;
-      background: linear-gradient(to bottom, rgba(6, 6, 15, 0.98) 60%, transparent);
+      background: linear-gradient(to bottom, rgba(6, 6, 15, .98) 60%, transparent);
       backdrop-filter: blur(16px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.035);
-      transition: background .3s;
+      border-bottom: 1px solid rgba(255, 255, 255, .035)
+    }
+
+    #sb-toggle {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text2);
+      flex-shrink: 0;
+      transition: all .2s
+    }
+
+    #sb-toggle:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, .06)
     }
 
     .logo {
@@ -107,20 +122,20 @@
       letter-spacing: 2px;
       cursor: pointer;
       flex-shrink: 0;
-      transition: opacity .2s;
+      transition: opacity .2s
     }
 
     .logo:hover {
-      opacity: .85;
+      opacity: .85
     }
 
     .logo span {
-      color: var(--red);
+      color: var(--red)
     }
 
     .nav-links {
       display: flex;
-      gap: 2px;
+      gap: 2px
     }
 
     .nav-links button {
@@ -129,24 +144,24 @@
       font-size: .875rem;
       font-weight: 500;
       color: var(--text2);
-      transition: all .2s;
+      transition: all .2s
     }
 
     .nav-links button:hover {
       color: var(--text);
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, .05)
     }
 
     .nav-links button.active {
       color: var(--red);
-      background: rgba(229, 9, 20, 0.1);
+      background: rgba(229, 9, 20, .1)
     }
 
     .search-wrap {
       flex: 1;
       max-width: 440px;
       margin-left: auto;
-      position: relative;
+      position: relative
     }
 
     .search-wrap svg {
@@ -156,81 +171,267 @@
       transform: translateY(-50%);
       color: var(--text3);
       pointer-events: none;
-      transition: color .2s;
+      transition: color .2s
     }
 
     .search-wrap:focus-within svg {
-      color: var(--red);
+      color: var(--red)
     }
 
     #nav-search {
       width: 100%;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, .05);
       border: 1px solid var(--border);
       border-radius: 50px;
       padding: 10px 16px 10px 40px;
       font-size: .9rem;
       color: var(--text);
       outline: none;
-      transition: all .3s;
+      transition: all .3s
     }
 
     #nav-search:focus {
       border-color: var(--red);
-      background: rgba(229, 9, 20, 0.06);
+      background: rgba(229, 9, 20, .06)
     }
 
     #nav-search::placeholder {
-      color: var(--text3);
+      color: var(--text3)
     }
 
+    /* ── SUGGEST BOX ── */
     #suggest-box {
       position: absolute;
       top: calc(100% + 8px);
       left: 0;
       right: 0;
-      background: var(--card2);
+      background: var(--bg2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, .7);
       display: none;
       z-index: 100;
+      min-width: 340px
     }
 
     #suggest-box.open {
-      display: block;
+      display: block
     }
 
     .suggest-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 16px;
+      gap: 12px;
+      padding: 8px 14px;
       cursor: pointer;
       transition: background .15s;
+      border-bottom: 1px solid rgba(255, 255, 255, .04)
+    }
+
+    .suggest-item:last-child {
+      border-bottom: none
     }
 
     .suggest-item:hover {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(229, 9, 20, .08)
     }
 
-    .suggest-item svg {
-      color: var(--text3);
+    .suggest-poster {
+      width: 36px;
+      height: 52px;
+      border-radius: 5px;
+      object-fit: cover;
       flex-shrink: 0;
+      background: var(--card)
     }
 
-    /* ──────────── VIEWS ──────────── */
+    .suggest-info {
+      flex: 1;
+      overflow: hidden
+    }
+
+    .suggest-title {
+      font-size: .86rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .suggest-meta {
+      font-size: .72rem;
+      color: var(--text3);
+      margin-top: 2px
+    }
+
+    .suggest-type {
+      font-size: .65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0
+    }
+
+    .suggest-type.movie {
+      background: var(--red-dim);
+      color: var(--red)
+    }
+
+    .suggest-type.series {
+      background: rgba(59, 130, 246, .15);
+      color: #60a5fa
+    }
+
+    .suggest-divider {
+      padding: 5px 14px 4px;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text3);
+      background: var(--bg)
+    }
+
+    /* ── SIDEBAR ── */
+    #sb-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: rgba(0, 0, 0, .55);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s
+    }
+
+    #sb-overlay.open {
+      opacity: 1;
+      pointer-events: all
+    }
+
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 260px;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+      overflow-y: auto
+    }
+
+    #sidebar.open {
+      transform: translateX(0);
+      box-shadow: 4px 0 40px rgba(0, 0, 0, .5)
+    }
+
+    .sb-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      height: 66px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0
+    }
+
+    .sb-logo {
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1.5px
+    }
+
+    .sb-logo span {
+      color: var(--red)
+    }
+
+    .sb-close {
+      margin-left: auto;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text3);
+      cursor: pointer;
+      transition: all .2s
+    }
+
+    .sb-close:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, .08)
+    }
+
+    .sb-section {
+      padding: 10px 20px 4px;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-top: 6px
+    }
+
+    .sb-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 20px;
+      width: 100%;
+      font-size: .92rem;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all .18s;
+      border-left: 3px solid transparent
+    }
+
+    .sb-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, .04)
+    }
+
+    .sb-btn.active {
+      color: var(--red);
+      background: rgba(229, 9, 20, .08);
+      border-left-color: var(--red)
+    }
+
+    .sb-btn svg {
+      flex-shrink: 0;
+      opacity: .7
+    }
+
+    .sb-btn.active svg {
+      opacity: 1;
+      color: var(--red)
+    }
+
+    .sb-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 20px
+    }
+
+    /* ── VIEWS ── */
     .view {
       display: none;
-      min-height: 100vh;
+      min-height: 100vh
     }
 
     .view.active {
-      display: block;
+      display: block
     }
 
-    /* ──────────── HERO ──────────── */
+    /* ── HERO ── */
     #hero {
       position: relative;
       height: 92vh;
@@ -238,7 +439,7 @@
       display: flex;
       align-items: flex-end;
       padding: 0 60px 72px;
-      overflow: hidden;
+      overflow: hidden
     }
 
     #hero-bg {
@@ -246,34 +447,32 @@
       inset: 0;
       background-size: cover;
       background-position: center 20%;
-      transition: background-image .5s ease;
+      transition: background-image .5s ease
     }
 
     #hero-bg::after {
       content: '';
       position: absolute;
       inset: 0;
-      background:
-        linear-gradient(to right, rgba(6, 6, 15, .96) 0%, rgba(6, 6, 15, .55) 45%, rgba(6, 6, 15, .15) 100%),
-        linear-gradient(to top, rgba(6, 6, 15, 1) 0%, rgba(6, 6, 15, .3) 40%, transparent 65%);
+      background: linear-gradient(to right, rgba(6, 6, 15, .96) 0%, rgba(6, 6, 15, .55) 45%, rgba(6, 6, 15, .15) 100%), linear-gradient(to top, rgba(6, 6, 15, 1) 0%, rgba(6, 6, 15, .3) 40%, transparent 65%)
     }
 
     #hero-content {
       position: relative;
       z-index: 2;
       max-width: 540px;
-      animation: fadeUp .7s ease both;
+      animation: fadeUp .7s ease both
     }
 
     @keyframes fadeUp {
       from {
         opacity: 0;
-        transform: translateY(28px);
+        transform: translateY(28px)
       }
 
       to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0)
       }
     }
 
@@ -290,7 +489,7 @@
       letter-spacing: 1.5px;
       text-transform: uppercase;
       color: var(--red);
-      margin-bottom: 14px;
+      margin-bottom: 14px
     }
 
     .hero-title {
@@ -299,7 +498,7 @@
       line-height: .95;
       letter-spacing: .5px;
       margin-bottom: 14px;
-      text-shadow: 0 2px 24px rgba(0, 0, 0, .7);
+      text-shadow: 0 2px 24px rgba(0, 0, 0, .7)
     }
 
     .hero-meta {
@@ -309,7 +508,7 @@
       font-size: .85rem;
       color: var(--text2);
       margin-bottom: 14px;
-      flex-wrap: wrap;
+      flex-wrap: wrap
     }
 
     .hero-rating {
@@ -317,23 +516,23 @@
       font-weight: 700;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 4px
     }
 
     .hero-genres {
       display: flex;
       gap: 7px;
       flex-wrap: wrap;
-      margin-bottom: 20px;
+      margin-bottom: 20px
     }
 
     .hero-genres span {
       padding: 3px 11px;
       border-radius: 50px;
-      background: rgba(255, 255, 255, 0.07);
+      background: rgba(255, 255, 255, .07);
       border: 1px solid var(--border);
       font-size: .73rem;
-      font-weight: 500;
+      font-weight: 500
     }
 
     .hero-desc {
@@ -345,12 +544,12 @@
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
-      overflow: hidden;
+      overflow: hidden
     }
 
     .hero-btns {
       display: flex;
-      gap: 10px;
+      gap: 10px
     }
 
     .btn-play {
@@ -364,32 +563,32 @@
       font-size: .93rem;
       font-weight: 600;
       box-shadow: 0 4px 24px var(--red-glow);
-      transition: all .22s;
+      transition: all .22s
     }
 
     .btn-play:hover {
       background: var(--red2);
       transform: translateY(-2px);
-      box-shadow: 0 8px 36px var(--red-glow);
+      box-shadow: 0 8px 36px var(--red-glow)
     }
 
     .btn-ghost {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.13);
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(255, 255, 255, .13);
       padding: 12px 22px;
       border-radius: 50px;
       font-size: .93rem;
       font-weight: 500;
       backdrop-filter: blur(6px);
-      transition: all .22s;
+      transition: all .22s
     }
 
     .btn-ghost:hover {
-      background: rgba(255, 255, 255, 0.15);
-      transform: translateY(-2px);
+      background: rgba(255, 255, 255, .15);
+      transform: translateY(-2px)
     }
 
     .hero-dots {
@@ -399,33 +598,33 @@
       transform: translateX(-50%);
       display: flex;
       gap: 7px;
-      z-index: 3;
+      z-index: 3
     }
 
     .hero-dot {
       width: 28px;
       height: 3px;
       border-radius: 2px;
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, .2);
       cursor: pointer;
-      transition: all .35s;
+      transition: all .35s
     }
 
     .hero-dot.on {
       background: var(--red);
-      width: 48px;
+      width: 48px
     }
 
-    /* ──────────── SECTIONS ──────────── */
+    /* ── SECTIONS ── */
     .section {
-      padding: 44px 40px 4px;
+      padding: 44px 40px 4px
     }
 
     .sec-hd {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 22px;
+      margin-bottom: 22px
     }
 
     .sec-title {
@@ -434,7 +633,7 @@
       letter-spacing: .5px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 10px
     }
 
     .sec-title::before {
@@ -443,7 +642,7 @@
       width: 4px;
       height: 26px;
       border-radius: 2px;
-      background: linear-gradient(to bottom, var(--red), #800);
+      background: linear-gradient(to bottom, var(--red), #800)
     }
 
     .see-all {
@@ -454,11 +653,11 @@
       border-radius: 50px;
       border: 1px solid rgba(229, 9, 20, .3);
       background: rgba(229, 9, 20, .07);
-      transition: all .2s;
+      transition: all .2s
     }
 
     .see-all:hover {
-      background: var(--red-dim);
+      background: var(--red-dim)
     }
 
     .row {
@@ -467,14 +666,14 @@
       overflow-x: auto;
       padding-bottom: 12px;
       scroll-snap-type: x mandatory;
-      scrollbar-width: none;
+      scrollbar-width: none
     }
 
     .row::-webkit-scrollbar {
-      display: none;
+      display: none
     }
 
-    /* ──────────── CARDS ──────────── */
+    /* ── CARDS ── */
     .card {
       flex-shrink: 0;
       width: 170px;
@@ -484,30 +683,30 @@
       cursor: pointer;
       scroll-snap-align: start;
       transition: transform .3s, box-shadow .3s;
-      animation: cardIn .35s ease both;
+      animation: cardIn .35s ease both
     }
 
     .card:hover {
       transform: translateY(-6px) scale(1.025);
-      box-shadow: 0 14px 40px rgba(0, 0, 0, .5), 0 0 0 1px rgba(229, 9, 20, .2);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, .5), 0 0 0 1px rgba(229, 9, 20, .2)
     }
 
     @keyframes cardIn {
       from {
         opacity: 0;
-        transform: translateY(18px);
+        transform: translateY(18px)
       }
 
       to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0)
       }
     }
 
     .card-img-wrap {
       position: relative;
       aspect-ratio: 2/3;
-      overflow: hidden;
+      overflow: hidden
     }
 
     .card-img {
@@ -515,11 +714,11 @@
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform .4s;
+      transition: transform .4s
     }
 
     .card:hover .card-img {
-      transform: scale(1.07);
+      transform: scale(1.07)
     }
 
     .card-ov {
@@ -530,11 +729,11 @@
       transition: opacity .3s;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: center
     }
 
     .card:hover .card-ov {
-      opacity: 1;
+      opacity: 1
     }
 
     .card-play {
@@ -548,12 +747,12 @@
       box-shadow: 0 4px 20px var(--red-glow);
       transform: scale(.7);
       transition: transform .3s;
-      opacity: 0;
+      opacity: 0
     }
 
     .card:hover .card-play {
       transform: scale(1);
-      opacity: 1;
+      opacity: 1
     }
 
     .card-badge {
@@ -566,7 +765,7 @@
       font-size: .63rem;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: .5px;
+      letter-spacing: .5px
     }
 
     .card-score {
@@ -582,11 +781,11 @@
       color: var(--gold);
       display: flex;
       align-items: center;
-      gap: 3px;
+      gap: 3px
     }
 
     .card-info {
-      padding: 9px 10px 12px;
+      padding: 9px 10px 12px
     }
 
     .card-name {
@@ -597,40 +796,40 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      margin-bottom: 3px;
+      margin-bottom: 3px
     }
 
     .card-sub {
       font-size: .7rem;
-      color: var(--text3);
+      color: var(--text3)
     }
 
-    /* ──────────── SEARCH VIEW ──────────── */
+    /* ── SEARCH VIEW ── */
     #search-view {
-      padding-top: 96px;
+      padding-top: 96px
     }
 
     .search-head {
-      padding: 0 40px 28px;
+      padding: 0 40px 28px
     }
 
     .search-head h1 {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 2.4rem;
-      letter-spacing: .5px;
+      letter-spacing: .5px
     }
 
     .search-head p {
       color: var(--text2);
       margin-top: 5px;
-      font-size: .9rem;
+      font-size: .9rem
     }
 
     .filter-row {
       display: flex;
       gap: 8px;
       margin-top: 16px;
-      flex-wrap: wrap;
+      flex-wrap: wrap
     }
 
     .chip {
@@ -642,34 +841,34 @@
       font-weight: 500;
       color: var(--text2);
       cursor: pointer;
-      transition: all .2s;
+      transition: all .2s
     }
 
     .chip:hover {
       border-color: var(--red);
-      color: var(--red);
+      color: var(--red)
     }
 
     .chip.on {
       background: var(--red-dim);
       border-color: var(--red);
-      color: var(--red);
+      color: var(--red)
     }
 
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
       gap: 18px;
-      padding: 0 40px 80px;
+      padding: 0 40px 80px
     }
 
     .grid .card {
-      width: auto;
+      width: auto
     }
 
-    /* ──────────── DETAIL VIEW ──────────── */
+    /* ── DETAIL VIEW ── */
     #detail-view {
-      padding-top: 66px;
+      padding-top: 66px
     }
 
     .detail-back {
@@ -677,16 +876,14 @@
       height: 52vh;
       min-height: 360px;
       background-size: cover;
-      background-position: center 15%;
+      background-position: center 15%
     }
 
     .detail-back::after {
       content: '';
       position: absolute;
       inset: 0;
-      background:
-        linear-gradient(to right, rgba(6, 6, 15, .98) 0%, rgba(6, 6, 15, .65) 50%, rgba(6, 6, 15, .3) 100%),
-        linear-gradient(to top, rgba(6, 6, 15, 1) 0%, transparent 55%);
+      background: linear-gradient(to right, rgba(6, 6, 15, .98) 0%, rgba(6, 6, 15, .65) 50%, rgba(6, 6, 15, .3) 100%), linear-gradient(to top, rgba(6, 6, 15, 1) 0%, transparent 55%)
     }
 
     .detail-body {
@@ -695,7 +892,7 @@
       padding: 0 60px 40px;
       position: relative;
       margin-top: -230px;
-      z-index: 2;
+      z-index: 2
     }
 
     .detail-poster {
@@ -705,19 +902,19 @@
       object-fit: cover;
       border-radius: var(--r2);
       box-shadow: 0 20px 60px rgba(0, 0, 0, .7);
-      border: 2px solid rgba(255, 255, 255, .08);
+      border: 2px solid rgba(255, 255, 255, .08)
     }
 
     .detail-info {
       flex: 1;
-      padding-top: 130px;
+      padding-top: 130px
     }
 
     .detail-title {
       font-family: 'Bebas Neue', sans-serif;
       font-size: clamp(2rem, 4vw, 3.4rem);
       line-height: 1;
-      margin-bottom: 12px;
+      margin-bottom: 12px
     }
 
     .detail-meta {
@@ -727,7 +924,7 @@
       flex-wrap: wrap;
       font-size: .88rem;
       color: var(--text2);
-      margin-bottom: 14px;
+      margin-bottom: 14px
     }
 
     .imdb-tag {
@@ -736,14 +933,14 @@
       padding: 2px 8px;
       border-radius: 4px;
       font-weight: 800;
-      font-size: .78rem;
+      font-size: .78rem
     }
 
     .detail-genres {
       display: flex;
       gap: 7px;
       flex-wrap: wrap;
-      margin-bottom: 18px;
+      margin-bottom: 18px
     }
 
     .detail-genres span {
@@ -752,7 +949,7 @@
       background: var(--card);
       border: 1px solid var(--border);
       font-size: .78rem;
-      font-weight: 500;
+      font-weight: 500
     }
 
     .detail-desc {
@@ -760,19 +957,19 @@
       color: var(--text2);
       line-height: 1.7;
       max-width: 600px;
-      margin-bottom: 26px;
+      margin-bottom: 26px
     }
 
     .detail-acts {
       display: flex;
       gap: 10px;
-      flex-wrap: wrap;
+      flex-wrap: wrap
     }
 
-    /* ──────────── PLAYER ──────────── */
+    /* ── PLAYER ── */
     .player-sec {
       padding: 36px 60px;
-      background: var(--bg2);
+      background: var(--bg2)
     }
 
     .player-wrap {
@@ -781,10 +978,9 @@
       overflow: hidden;
       background: #000;
       aspect-ratio: 16/9;
-      box-shadow: 0 20px 80px rgba(0, 0, 0, .7);
+      box-shadow: 0 20px 80px rgba(0, 0, 0, .7)
     }
 
-    /* ── VIDEO LOADING OVERLAY ── */
     #vid-loader {
       position: absolute;
       inset: 0;
@@ -795,51 +991,48 @@
       gap: 20px;
       background: linear-gradient(135deg, #06060f 0%, #0f0f20 50%, #06060f 100%);
       z-index: 10;
-      transition: opacity .4s ease;
+      transition: opacity .4s ease
     }
 
     #vid-loader.hidden {
       opacity: 0;
-      pointer-events: none;
+      pointer-events: none
     }
 
-    /* Film strip animation top & bottom */
     .film-strip {
       position: absolute;
       left: 0;
       right: 0;
       height: 36px;
       display: flex;
-      gap: 0;
-      overflow: hidden;
+      overflow: hidden
     }
 
     .film-strip.top {
-      top: 0;
+      top: 0
     }
 
     .film-strip.bottom {
-      bottom: 0;
+      bottom: 0
     }
 
     .film-hole-row {
       display: flex;
-      gap: 0;
       animation: filmScroll 1.2s linear infinite;
-      white-space: nowrap;
+      white-space: nowrap
     }
 
     .film-strip.bottom .film-hole-row {
-      animation-direction: reverse;
+      animation-direction: reverse
     }
 
     @keyframes filmScroll {
       from {
-        transform: translateX(0);
+        transform: translateX(0)
       }
 
       to {
-        transform: translateX(-120px);
+        transform: translateX(-120px)
       }
     }
 
@@ -852,7 +1045,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 6px
     }
 
     .film-perf {
@@ -860,29 +1053,27 @@
       height: 18px;
       border-radius: 3px;
       background: #06060f;
-      border: 1.5px solid #2a2a45;
+      border: 1.5px solid #2a2a45
     }
 
-    /* Center loader content */
     .loader-center {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
+      gap: 16px
     }
 
-    /* CloudMovies logo pulse */
     .loader-logo {
       font-family: 'Cinzel', serif;
       font-size: 1.6rem;
       font-weight: 700;
       letter-spacing: 3px;
       color: rgba(255, 255, 255, .15);
-      animation: logoPulse 2s ease-in-out infinite;
+      animation: logoPulse 2s ease-in-out infinite
     }
 
     .loader-logo span {
-      color: rgba(229, 9, 20, .5);
+      color: rgba(229, 9, 20, .5)
     }
 
     @keyframes logoPulse {
@@ -890,30 +1081,29 @@
       0%,
       100% {
         opacity: .4;
-        transform: scale(1);
+        transform: scale(1)
       }
 
       50% {
         opacity: 1;
-        transform: scale(1.03);
+        transform: scale(1.03)
       }
     }
 
-    /* Circular progress ring */
     .ring-wrap {
       position: relative;
       width: 72px;
-      height: 72px;
+      height: 72px
     }
 
     .ring-wrap svg {
-      transform: rotate(-90deg);
+      transform: rotate(-90deg)
     }
 
     .ring-track {
       fill: none;
       stroke: rgba(255, 255, 255, .06);
-      stroke-width: 3;
+      stroke-width: 3
     }
 
     .ring-fill {
@@ -924,27 +1114,26 @@
       stroke-dasharray: 200;
       stroke-dashoffset: 200;
       animation: ringFill 1.8s ease-in-out infinite;
-      filter: drop-shadow(0 0 6px rgba(229, 9, 20, .7));
+      filter: drop-shadow(0 0 6px rgba(229, 9, 20, .7))
     }
 
     @keyframes ringFill {
       0% {
         stroke-dashoffset: 200;
-        opacity: 1;
+        opacity: 1
       }
 
       70% {
         stroke-dashoffset: 0;
-        opacity: 1;
+        opacity: 1
       }
 
       100% {
         stroke-dashoffset: 0;
-        opacity: 0;
+        opacity: 0
       }
     }
 
-    /* Play icon in center of ring */
     .ring-play {
       position: absolute;
       top: 50%;
@@ -952,63 +1141,56 @@
       transform: translate(-50%, -50%);
       color: var(--red);
       opacity: .6;
-      animation: logoPulse 1.8s ease-in-out infinite;
+      animation: logoPulse 1.8s ease-in-out infinite
     }
 
-    /* Loading bar below ring */
     .loader-bar-wrap {
       width: 180px;
       height: 2px;
       border-radius: 1px;
       background: rgba(255, 255, 255, .06);
-      overflow: hidden;
+      overflow: hidden
     }
 
     .loader-bar {
       height: 100%;
       border-radius: 1px;
       background: linear-gradient(to right, transparent, var(--red), transparent);
-      animation: barSlide 1.4s ease-in-out infinite;
+      animation: barSlide 1.4s ease-in-out infinite
     }
 
     @keyframes barSlide {
       0% {
         transform: translateX(-100%);
-        width: 60%;
+        width: 60%
       }
 
       100% {
         transform: translateX(200%);
-        width: 60%;
+        width: 60%
       }
     }
 
-    /* Status text */
     .loader-txt {
       font-size: .78rem;
       color: var(--text3);
       letter-spacing: 1.5px;
       text-transform: uppercase;
       font-weight: 600;
-      animation: logoPulse 1.4s ease-in-out infinite;
+      animation: logoPulse 1.4s ease-in-out infinite
     }
 
-    /* Scanline effect */
     .loader-scan {
       position: absolute;
       inset: 0;
       pointer-events: none;
-      background: repeating-linear-gradient(0deg,
-          transparent,
-          transparent 2px,
-          rgba(0, 0, 0, .08) 2px,
-          rgba(0, 0, 0, .08) 4px);
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .08) 2px, rgba(0, 0, 0, .08) 4px)
     }
 
     #vid {
       width: 100%;
       height: 100%;
-      display: block;
+      display: block
     }
 
     #sub-overlay {
@@ -1026,7 +1208,77 @@
       background: rgba(0, 0, 0, .38);
       padding: 3px 12px;
       border-radius: 5px;
-      display: none;
+      display: none
+    }
+
+    /* ── SKIP FLASH ── */
+    .skip-flash {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 8;
+      opacity: 0;
+      transition: opacity .15s
+    }
+
+    .skip-flash.left {
+      left: 0
+    }
+
+    .skip-flash.right {
+      right: 0
+    }
+
+    .skip-flash.show {
+      opacity: 1
+    }
+
+    .skip-bubble {
+      background: rgba(255, 255, 255, .18);
+      backdrop-filter: blur(6px);
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      animation: skipPop .3s ease both
+    }
+
+    @keyframes skipPop {
+      0% {
+        transform: scale(.5);
+        opacity: 0
+      }
+
+      60% {
+        transform: scale(1.2);
+        opacity: 1
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1
+      }
+    }
+
+    .skip-bubble svg {
+      color: #fff
+    }
+
+    .skip-bubble span {
+      font-size: .72rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: .5px
     }
 
     .vid-ctrls {
@@ -1038,13 +1290,13 @@
       padding: 14px 18px 10px;
       opacity: 0;
       transition: opacity .4s ease;
-      pointer-events: none;
+      pointer-events: none
     }
 
     .player-wrap.show-ctrls .vid-ctrls,
     .player-wrap.paused .vid-ctrls {
       opacity: 1;
-      pointer-events: all;
+      pointer-events: all
     }
 
     .prog-bar {
@@ -1054,11 +1306,11 @@
       border-radius: 2px;
       cursor: pointer;
       margin-bottom: 10px;
-      transition: height .18s;
+      transition: height .18s
     }
 
     .prog-bar:hover {
-      height: 6px;
+      height: 6px
     }
 
     .prog-fill {
@@ -1066,7 +1318,7 @@
       background: var(--red);
       border-radius: 2px;
       position: relative;
-      pointer-events: none;
+      pointer-events: none
     }
 
     .prog-fill::after {
@@ -1081,17 +1333,17 @@
       background: #fff;
       box-shadow: 0 0 6px rgba(229, 9, 20, .6);
       opacity: 0;
-      transition: opacity .2s;
+      transition: opacity .2s
     }
 
     .prog-bar:hover .prog-fill::after {
-      opacity: 1;
+      opacity: 1
     }
 
     .ctrl-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 10px
     }
 
     .cbtn {
@@ -1102,24 +1354,24 @@
       align-items: center;
       justify-content: center;
       color: rgba(255, 255, 255, .8);
-      transition: all .18s;
+      transition: all .18s
     }
 
     .cbtn:hover {
       color: #fff;
-      background: rgba(255, 255, 255, .1);
+      background: rgba(255, 255, 255, .1)
     }
 
     .time-lbl {
       font-size: .78rem;
       color: rgba(255, 255, 255, .65);
-      white-space: nowrap;
+      white-space: nowrap
     }
 
     .vol-wrap {
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 7px
     }
 
     .vol-range {
@@ -1129,7 +1381,7 @@
       appearance: none;
       background: rgba(255, 255, 255, .3);
       border-radius: 2px;
-      cursor: pointer;
+      cursor: pointer
     }
 
     .vol-range::-webkit-slider-thumb {
@@ -1137,11 +1389,11 @@
       width: 12px;
       height: 12px;
       background: #fff;
-      border-radius: 50%;
+      border-radius: 50%
     }
 
     .spacer {
-      flex: 1;
+      flex: 1
     }
 
     .player-opts {
@@ -1149,13 +1401,13 @@
       gap: 14px;
       padding: 16px 0;
       align-items: center;
-      flex-wrap: wrap;
+      flex-wrap: wrap
     }
 
     .opt-group {
       display: flex;
       align-items: center;
-      gap: 9px;
+      gap: 9px
     }
 
     .opt-group label {
@@ -1164,10 +1416,9 @@
       letter-spacing: 1.2px;
       color: var(--text3);
       font-weight: 700;
-      white-space: nowrap;
+      white-space: nowrap
     }
 
-    /* Custom select dropdown */
     .opt-select {
       appearance: none;
       -webkit-appearance: none;
@@ -1186,45 +1437,44 @@
       background-repeat: no-repeat;
       background-position: right 10px center;
       min-width: 120px;
-      max-width: 200px;
+      max-width: 200px
     }
 
     .opt-select:hover {
-      border-color: var(--red);
+      border-color: var(--red)
     }
 
     .opt-select:focus {
       border-color: var(--red);
-      background-color: rgba(229, 9, 20, .07);
+      background-color: rgba(229, 9, 20, .07)
     }
 
     .opt-select option {
       background: #0f0f1e;
       color: var(--text);
-      padding: 6px;
+      padding: 6px
     }
 
-    /* keep .ochip for backwards compat (hidden now) */
     .ochip {
-      display: none;
+      display: none
     }
 
-    /* ──────────── DOWNLOADS ──────────── */
+    /* ── DOWNLOADS ── */
     .dl-sec {
-      padding: 32px 60px 40px;
+      padding: 32px 60px 40px
     }
 
     .dl-title {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 1.75rem;
       letter-spacing: .5px;
-      margin-bottom: 18px;
+      margin-bottom: 18px
     }
 
     .dl-grid {
       display: flex;
       gap: 10px;
-      flex-wrap: wrap;
+      flex-wrap: wrap
     }
 
     .dl-card {
@@ -1237,13 +1487,13 @@
       padding: 13px 18px;
       cursor: pointer;
       transition: all .22s;
-      min-width: 190px;
+      min-width: 190px
     }
 
     .dl-card:hover {
       border-color: var(--red);
       background: var(--red-dim);
-      transform: translateY(-2px);
+      transform: translateY(-2px)
     }
 
     .dl-icon {
@@ -1254,37 +1504,37 @@
       background: linear-gradient(135deg, var(--red), #600010);
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: center
     }
 
     .dl-qual {
       font-weight: 700;
-      font-size: .93rem;
+      font-size: .93rem
     }
 
     .dl-size {
       font-size: .75rem;
       color: var(--text2);
-      margin-top: 2px;
+      margin-top: 2px
     }
 
-    /* ──────────── COMMENTS ──────────── */
+    /* ── COMMENTS ── */
     .cmt-sec {
-      padding: 36px 60px 80px;
+      padding: 36px 60px 80px
     }
 
     .cmt-title {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 1.75rem;
       letter-spacing: .5px;
-      margin-bottom: 22px;
+      margin-bottom: 22px
     }
 
     .cmt-form {
       display: flex;
       gap: 13px;
       align-items: flex-start;
-      margin-bottom: 28px;
+      margin-bottom: 28px
     }
 
     .ava {
@@ -1296,11 +1546,11 @@
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: .9rem;
+      font-size: .9rem
     }
 
     .cmt-input-wrap {
-      flex: 1;
+      flex: 1
     }
 
     .cmt-ta {
@@ -1314,22 +1564,22 @@
       height: 76px;
       outline: none;
       color: var(--text);
-      transition: border-color .2s;
+      transition: border-color .2s
     }
 
     .cmt-ta:focus {
-      border-color: var(--red);
+      border-color: var(--red)
     }
 
     .cmt-ta::placeholder {
-      color: var(--text3);
+      color: var(--text3)
     }
 
     .cmt-act {
       display: flex;
       justify-content: flex-end;
       gap: 7px;
-      margin-top: 7px;
+      margin-top: 7px
     }
 
     .btn-post {
@@ -1339,17 +1589,17 @@
       border-radius: 8px;
       font-size: .86rem;
       font-weight: 600;
-      transition: all .2s;
+      transition: all .2s
     }
 
     .btn-post:hover {
-      background: var(--red2);
+      background: var(--red2)
     }
 
     .cmt-list {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 16px
     }
 
     .cmt {
@@ -1359,40 +1609,40 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      animation: cardIn .3s ease both;
+      animation: cardIn .3s ease both
     }
 
     .cmt-body {
-      flex: 1;
+      flex: 1
     }
 
     .cmt-hd {
       display: flex;
       align-items: center;
       gap: 9px;
-      margin-bottom: 7px;
+      margin-bottom: 7px
     }
 
     .cmt-name {
       font-weight: 600;
-      font-size: .88rem;
+      font-size: .88rem
     }
 
     .cmt-time {
       font-size: .72rem;
-      color: var(--text3);
+      color: var(--text3)
     }
 
     .cmt-txt {
       font-size: .87rem;
       color: var(--text2);
-      line-height: 1.6;
+      line-height: 1.6
     }
 
     .cmt-acts {
       display: flex;
       gap: 10px;
-      margin-top: 7px;
+      margin-top: 7px
     }
 
     .cmt-btn {
@@ -1403,26 +1653,26 @@
       gap: 4px;
       padding: 3px 7px;
       border-radius: 6px;
-      transition: all .2s;
+      transition: all .2s
     }
 
     .cmt-btn:hover {
       color: var(--red);
-      background: var(--red-dim);
+      background: var(--red-dim)
     }
 
     .cmt-btn.liked {
-      color: var(--red);
+      color: var(--red)
     }
 
-    /* ──────────── SPINNER / EMPTY ──────────── */
+    /* ── SPINNER / EMPTY ── */
     .spin-wrap {
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 56px;
       flex-direction: column;
-      gap: 14px;
+      gap: 14px
     }
 
     .spin {
@@ -1431,18 +1681,18 @@
       border-radius: 50%;
       border: 3px solid rgba(229, 9, 20, .18);
       border-top-color: var(--red);
-      animation: spin .75s linear infinite;
+      animation: spin .75s linear infinite
     }
 
     @keyframes spin {
       to {
-        transform: rotate(360deg);
+        transform: rotate(360deg)
       }
     }
 
     .spin-lbl {
       color: var(--text2);
-      font-size: .88rem;
+      font-size: .88rem
     }
 
     .empty {
@@ -1452,23 +1702,23 @@
       justify-content: center;
       padding: 72px 40px;
       gap: 14px;
-      text-align: center;
+      text-align: center
     }
 
     .empty h3 {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 1.7rem;
-      letter-spacing: .5px;
+      letter-spacing: .5px
     }
 
     .empty p {
       color: var(--text2);
       max-width: 300px;
       line-height: 1.6;
-      font-size: .9rem;
+      font-size: .9rem
     }
 
-    /* ──────────── TOAST ──────────── */
+    /* ── TOAST ── */
     #toast {
       position: fixed;
       bottom: 28px;
@@ -1487,22 +1737,22 @@
       align-items: center;
       gap: 9px;
       max-width: 380px;
-      text-align: center;
+      text-align: center
     }
 
     #toast.show {
-      transform: translateX(-50%) translateY(0);
+      transform: translateX(-50%) translateY(0)
     }
 
     #toast.err {
-      border-color: var(--red);
+      border-color: var(--red)
     }
 
     #toast.ok {
-      border-color: #22c55e;
+      border-color: #22c55e
     }
 
-    /* ──────────── MODAL ──────────── */
+    /* ── MODAL ── */
     #modal-bg {
       position: fixed;
       inset: 0;
@@ -1514,12 +1764,12 @@
       justify-content: center;
       opacity: 0;
       pointer-events: none;
-      transition: opacity .28s;
+      transition: opacity .28s
     }
 
     #modal-bg.open {
       opacity: 1;
-      pointer-events: all;
+      pointer-events: all
     }
 
     .modal {
@@ -1530,88 +1780,40 @@
       max-width: 500px;
       width: 90%;
       transform: scale(.9);
-      transition: transform .28s;
+      transition: transform .28s
     }
 
     #modal-bg.open .modal {
-      transform: scale(1);
+      transform: scale(1)
     }
 
     .modal h2 {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 1.7rem;
       letter-spacing: .5px;
-      margin-bottom: 10px;
+      margin-bottom: 10px
     }
 
     .modal p {
       color: var(--text2);
       line-height: 1.6;
-      margin-bottom: 22px;
+      margin-bottom: 22px
     }
 
     .modal-acts {
       display: flex;
       gap: 9px;
-      justify-content: flex-end;
-    }
-
-    /* ──────────── MISC ──────────── */
-    @media (max-width:768px) {
-      #navbar {
-        padding: 0 16px;
-      }
-
-      .nav-links {
-        display: none;
-      }
-
-      #hero {
-        padding: 0 20px 52px;
-      }
-
-      .section {
-        padding: 28px 16px 4px;
-      }
-
-      .detail-body {
-        padding: 0 20px 28px;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-      }
-
-      .detail-info {
-        padding-top: 20px;
-      }
-
-      .detail-meta,
-      .detail-genres,
-      .detail-acts {
-        justify-content: center;
-      }
-
-      .player-sec,
-      .dl-sec,
-      .cmt-sec {
-        padding-left: 20px;
-        padding-right: 20px;
-      }
-
-      .grid {
-        padding: 0 16px 60px;
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      }
+      justify-content: flex-end
     }
 
     /* ── EPISODE SELECTOR ── */
     #ep-selector {
       padding: 0 60px 32px;
-      display: none;
+      display: none
     }
 
     #ep-selector.show {
-      display: block;
+      display: block
     }
 
     .ep-sel-title {
@@ -1621,7 +1823,7 @@
       margin-bottom: 16px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 10px
     }
 
     .ep-sel-title::before {
@@ -1630,14 +1832,14 @@
       width: 3px;
       height: 22px;
       border-radius: 2px;
-      background: var(--red);
+      background: var(--red)
     }
 
     .season-tabs {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
-      margin-bottom: 20px;
+      margin-bottom: 20px
     }
 
     .stab {
@@ -1649,24 +1851,24 @@
       font-weight: 600;
       color: var(--text2);
       cursor: pointer;
-      transition: all .2s;
+      transition: all .2s
     }
 
     .stab:hover {
       border-color: var(--red);
-      color: var(--red);
+      color: var(--red)
     }
 
     .stab.on {
       background: var(--red-dim);
       border-color: var(--red);
-      color: var(--red);
+      color: var(--red)
     }
 
     .ep-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 10px;
+      gap: 10px
     }
 
     .ep-card {
@@ -1678,18 +1880,18 @@
       border-radius: var(--radius);
       padding: 12px 14px;
       cursor: pointer;
-      transition: all .2s;
+      transition: all .2s
     }
 
     .ep-card:hover {
       border-color: var(--red);
       background: rgba(229, 9, 20, .07);
-      transform: translateY(-1px);
+      transform: translateY(-1px)
     }
 
     .ep-card.playing {
       border-color: var(--red);
-      background: var(--red-dim);
+      background: var(--red-dim)
     }
 
     .ep-num {
@@ -1702,33 +1904,257 @@
       align-items: center;
       justify-content: center;
       font-weight: 800;
-      font-size: .85rem;
+      font-size: .85rem
     }
 
     .ep-card.playing .ep-num {
       background: #fff;
-      color: var(--red);
+      color: var(--red)
     }
 
     .ep-info .ep-label {
       font-size: .82rem;
-      font-weight: 600;
+      font-weight: 600
     }
 
     .ep-info .ep-sub {
       font-size: .72rem;
       color: var(--text3);
-      margin-top: 2px;
+      margin-top: 2px
     }
 
     .ep-card.playing .ep-info .ep-label {
-      color: var(--red);
+      color: var(--red)
     }
 
-    @media(max-width:768px) {
-      #ep-selector {
-        padding: 0 16px 28px;
+    /* ── LIVE TV VIEW ── */
+    #live-view {
+      padding-top: 86px;
+      min-height: 100vh
+    }
+
+    .live-head {
+      padding: 0 40px 24px
+    }
+
+    .live-head h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.4rem;
+      letter-spacing: .5px;
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .live-badge {
+      background: var(--red);
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: .75rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      animation: livePulse 2s ease-in-out infinite
+    }
+
+    @keyframes livePulse {
+
+      0%,
+      100% {
+        opacity: 1
       }
+
+      50% {
+        opacity: .6
+      }
+    }
+
+    .live-head p {
+      color: var(--text2);
+      margin-top: 4px;
+      font-size: .9rem
+    }
+
+    .country-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+      padding: 0 40px 28px
+    }
+
+    .country-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all .2s;
+      text-align: center
+    }
+
+    .country-card:hover {
+      border-color: var(--red);
+      background: var(--red-dim);
+      transform: translateY(-2px)
+    }
+
+    .country-card.active {
+      border-color: var(--red);
+      background: var(--red-dim)
+    }
+
+    .country-flag {
+      font-size: 2rem;
+      line-height: 1
+    }
+
+    .country-name {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--text2)
+    }
+
+    .country-card.active .country-name {
+      color: var(--red)
+    }
+
+    .country-count {
+      font-size: .68rem;
+      color: var(--text3)
+    }
+
+    .live-player-wrap {
+      padding: 0 40px 24px;
+      display: none
+    }
+
+    .live-player-wrap.show {
+      display: block
+    }
+
+    .live-player-inner {
+      position: relative;
+      aspect-ratio: 16/9;
+      background: #000;
+      border-radius: var(--r2);
+      overflow: hidden;
+      box-shadow: 0 20px 80px rgba(0, 0, 0, .7)
+    }
+
+    .live-player-inner video {
+      width: 100%;
+      height: 100%;
+      display: block
+    }
+
+    .live-info-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0 0
+    }
+
+    .live-ch-logo {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: var(--card);
+      flex-shrink: 0
+    }
+
+    .live-ch-name {
+      font-weight: 700;
+      font-size: .95rem
+    }
+
+    .live-ch-country {
+      font-size: .78rem;
+      color: var(--text3);
+      margin-top: 2px
+    }
+
+    .live-stop-btn {
+      margin-left: auto;
+      padding: 8px 18px;
+      border-radius: 8px;
+      background: rgba(229, 9, 20, .15);
+      border: 1px solid rgba(229, 9, 20, .4);
+      color: var(--red);
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s
+    }
+
+    .live-stop-btn:hover {
+      background: var(--red);
+      color: #fff
+    }
+
+    .channel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      padding: 0 40px 60px
+    }
+
+    .ch-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all .2s
+    }
+
+    .ch-card:hover {
+      border-color: var(--red);
+      background: rgba(229, 9, 20, .07);
+      transform: translateY(-1px)
+    }
+
+    .ch-card.playing {
+      border-color: var(--red);
+      background: var(--red-dim)
+    }
+
+    .ch-logo {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .05);
+      flex-shrink: 0;
+      padding: 4px
+    }
+
+    .ch-info .ch-name {
+      font-size: .84rem;
+      font-weight: 600
+    }
+
+    .ch-info .ch-cat {
+      font-size: .7rem;
+      color: var(--text3);
+      margin-top: 2px
+    }
+
+    .ch-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      flex-shrink: 0;
+      animation: livePulse 1.5s ease-in-out infinite;
+      margin-left: auto
     }
 
     /* ── FOOTER ── */
@@ -1737,7 +2163,7 @@
       padding: 40px 20px 32px;
       border-top: 1px solid var(--border);
       background: var(--bg2);
-      margin-top: 20px;
+      margin-top: 20px
     }
 
     .footer-logo {
@@ -1745,28 +2171,17 @@
       font-size: 1.3rem;
       font-weight: 700;
       letter-spacing: 2px;
-      margin-bottom: 10px;
+      margin-bottom: 10px
     }
 
     .footer-logo span {
-      color: var(--red);
+      color: var(--red)
     }
 
     .footer-credit {
       font-size: .82rem;
       color: var(--text3);
-      line-height: 1.8;
-    }
-
-    .footer-credit a {
-      color: var(--red);
-      text-decoration: none;
-      font-weight: 600;
-      transition: opacity .2s;
-    }
-
-    .footer-credit a:hover {
-      opacity: .75;
+      line-height: 1.8
     }
 
     .footer-made {
@@ -1776,23 +2191,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 6px
     }
 
     .footer-made .heart {
       color: var(--red);
-      animation: heartbeat 1.4s ease-in-out infinite;
+      animation: heartbeat 1.4s ease-in-out infinite
     }
 
     @keyframes heartbeat {
 
       0%,
       100% {
-        transform: scale(1);
+        transform: scale(1)
       }
 
       50% {
-        transform: scale(1.25);
+        transform: scale(1.25)
       }
     }
 
@@ -1806,18 +2221,166 @@
       border-radius: 50px;
       font-size: .75rem;
       font-weight: 600;
-      color: var(--red);
+      color: var(--red)
+    }
+
+    @media(max-width:768px) {
+      #navbar {
+        padding: 0 12px
+      }
+
+      .nav-links {
+        display: none
+      }
+
+      #hero {
+        padding: 0 20px 52px
+      }
+
+      .section {
+        padding: 28px 16px 4px
+      }
+
+      .detail-body {
+        padding: 0 20px 28px;
+        flex-direction: column;
+        align-items: center;
+        text-align: center
+      }
+
+      .detail-info {
+        padding-top: 20px
+      }
+
+      .detail-meta,
+      .detail-genres,
+      .detail-acts {
+        justify-content: center
+      }
+
+      .player-sec,
+      .dl-sec,
+      .cmt-sec {
+        padding-left: 20px;
+        padding-right: 20px
+      }
+
+      .grid,
+      .country-grid,
+      .channel-grid {
+        padding-left: 16px;
+        padding-right: 16px
+      }
+
+      .grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr))
+      }
+
+      #ep-selector {
+        padding: 0 16px 28px
+      }
+
+      .live-head,
+      .live-player-wrap {
+        padding-left: 16px;
+        padding-right: 16px
+      }
     }
   </style>
 </head>
 
 <body>
 
+  <!-- SIDEBAR OVERLAY -->
+  <div id="sb-overlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo">Cloud<span>Movies</span></div>
+      <button class="sb-close" onclick="closeSidebar()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <div class="sb-section">Browse</div>
+    <button class="sb-btn active" id="sb-home" onclick="goHome();closeSidebar()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+      Home
+    </button>
+    <button class="sb-btn" id="sb-livetv" onclick="showLiveTV();closeSidebar()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="2" />
+        <path d="M20 12c0-4.4-3.6-8-8-8s-8 3.6-8 8 3.6 8 8 8 8-3.6 8-8z" />
+        <path d="M2 12h2M20 12h2M12 2v2M12 20v2" />
+      </svg>
+      Live TV
+    </button>
+    <button class="sb-btn" id="sb-movies" onclick="doSearch('',1);closeSidebar()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="2" y="2" width="20" height="20" rx="2" />
+        <line x1="7" y1="2" x2="7" y2="22" />
+        <line x1="17" y1="2" x2="17" y2="22" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <line x1="2" y1="7" x2="7" y2="7" />
+        <line x1="2" y1="17" x2="7" y2="17" />
+        <line x1="17" y1="17" x2="22" y2="17" />
+        <line x1="17" y1="7" x2="22" y2="7" />
+      </svg>
+      Movies
+    </button>
+    <button class="sb-btn" id="sb-tv" onclick="doSearch('',2);closeSidebar()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <rect x="2" y="7" width="20" height="15" rx="2" />
+        <polyline points="17 2 12 7 7 2" />
+      </svg>
+      TV Series
+    </button>
+    <button class="sb-btn" id="sb-anim" onclick="doSearch('anime',0);closeSidebar()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+        <line x1="9" y1="9" x2="9.01" y2="9" />
+        <line x1="15" y1="9" x2="15.01" y2="9" />
+      </svg>
+      Animation
+    </button>
+    <button class="sb-btn" id="sb-trend" onclick="goTrending();closeSidebar()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+        <polyline points="17 6 23 6 23 12" />
+      </svg>
+      Trending
+    </button>
+    <div class="sb-divider"></div>
+    <div class="sb-section">Library</div>
+    <button class="sb-btn" onclick="showWatchlist();closeSidebar()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path
+          d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+      </svg>
+      Watchlist
+    </button>
+  </div>
+
   <!-- NAVBAR -->
   <nav id="navbar">
+    <button id="sb-toggle" onclick="toggleSidebar()">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    </button>
     <div class="logo" onclick="goHome()">Cloud<span>Movies</span></div>
     <div class="nav-links">
       <button class="active" onclick="goHome()">Home</button>
+      <button onclick="showLiveTV()">Live TV</button>
       <button onclick="doSearch('',1)">Movies</button>
       <button onclick="doSearch('',2)">TV Series</button>
       <button onclick="goTrending()">Trending</button>
@@ -1832,9 +2395,8 @@
     </div>
   </nav>
 
-  <!-- ═══════════════ HOME ═══════════════ -->
+  <!-- HOME VIEW -->
   <div id="home-view" class="view active">
-    <!-- HERO -->
     <div id="hero">
       <div id="hero-bg"></div>
       <div id="hero-content">
@@ -1842,35 +2404,27 @@
         <div class="hero-title" id="h-title">Loading…</div>
         <div class="hero-meta">
           <span class="hero-rating">★ <span id="h-score">--</span></span>
-          <span id="h-year">--</span>
-          <span id="h-dur">--</span>
+          <span id="h-year">--</span><span id="h-dur">--</span>
         </div>
         <div class="hero-genres" id="h-genres"></div>
         <p class="hero-desc" id="h-desc">Fetching featured content…</p>
         <div class="hero-btns">
-          <button class="btn-play" id="h-play" onclick="heroPlay()">
-            <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
+          <button class="btn-play" onclick="heroPlay()"><svg width="15" height="15" fill="currentColor"
+              viewBox="0 0 24 24">
               <path d="M5 3l14 9-14 9V3z" />
-            </svg>
-            Watch Now
-          </button>
-          <button class="btn-ghost" onclick="heroInfo()">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            </svg>Watch Now</button>
+          <button class="btn-ghost" onclick="heroInfo()"><svg width="15" height="15" fill="none" stroke="currentColor"
+              stroke-width="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" />
               <path d="M12 16v-4M12 8h.01" />
-            </svg>
-            More Info
-          </button>
+            </svg>More Info</button>
         </div>
       </div>
       <div class="hero-dots" id="h-dots"></div>
     </div>
-
-    <!-- TRENDING -->
     <div class="section">
       <div class="sec-hd">
-        <div class="sec-title">🔥 Trending Now</div>
-        <button class="see-all" onclick="goTrending()">See All</button>
+        <div class="sec-title">🔥 Trending Now</div><button class="see-all" onclick="goTrending()">See All</button>
       </div>
       <div class="row" id="row-trend">
         <div class="spin-wrap">
@@ -1878,12 +2432,9 @@
         </div>
       </div>
     </div>
-
-    <!-- HOT MOVIES -->
     <div class="section">
       <div class="sec-hd">
-        <div class="sec-title">🎬 Hot Movies</div>
-        <button class="see-all" onclick="doSearch('',1)">See All</button>
+        <div class="sec-title">🎬 Hot Movies</div><button class="see-all" onclick="doSearch('',1)">See All</button>
       </div>
       <div class="row" id="row-movies">
         <div class="spin-wrap">
@@ -1891,12 +2442,9 @@
         </div>
       </div>
     </div>
-
-    <!-- HOT TV -->
     <div class="section" style="padding-bottom:80px">
       <div class="sec-hd">
-        <div class="sec-title">📺 Hot TV Series</div>
-        <button class="see-all" onclick="doSearch('',2)">See All</button>
+        <div class="sec-title">📺 Hot TV Series</div><button class="see-all" onclick="doSearch('',2)">See All</button>
       </div>
       <div class="row" id="row-tv">
         <div class="spin-wrap">
@@ -1906,7 +2454,7 @@
     </div>
   </div>
 
-  <!-- ═══════════════ SEARCH ═══════════════ -->
+  <!-- SEARCH VIEW -->
   <div id="search-view" class="view">
     <div class="search-head">
       <h1 id="s-head">Results</h1>
@@ -1924,7 +2472,43 @@
     </div>
   </div>
 
-  <!-- ═══════════════ DETAIL ═══════════════ -->
+  <!-- LIVE TV VIEW -->
+  <div id="live-view" class="view">
+    <div class="live-head">
+      <h1><span>📡</span> Live TV <span class="live-badge">LIVE</span></h1>
+      <p>Tonton siaran langsung dari berbagai negara — gratis, tanpa login</p>
+    </div>
+    <div class="live-player-wrap" id="live-player-wrap">
+      <div class="live-player-inner">
+        <video id="live-vid" controls playsinline crossorigin="anonymous"></video>
+      </div>
+      <div class="live-info-bar">
+        <img class="live-ch-logo" id="live-ch-logo" src="" alt="" />
+        <div>
+          <div class="live-ch-name" id="live-ch-name">—</div>
+          <div class="live-ch-country" id="live-ch-country">—</div>
+        </div>
+        <button class="live-stop-btn" onclick="stopLive()">⏹ Stop</button>
+      </div>
+    </div>
+    <div style="padding:0 40px 20px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.5px;margin-bottom:16px">🌏 Pilih
+        Negara</div>
+      <div class="country-grid" id="country-grid">
+        <div class="spin-wrap" style="grid-column:1/-1">
+          <div class="spin"></div><span class="spin-lbl">Loading countries…</span>
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 40px 10px;display:none" id="channels-head">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.5px;margin-bottom:4px"
+        id="channels-title">Channels</div>
+      <div style="font-size:.85rem;color:var(--text2);margin-bottom:16px" id="channels-sub"></div>
+    </div>
+    <div class="channel-grid" id="channel-grid"></div>
+  </div>
+
+  <!-- DETAIL VIEW -->
   <div id="detail-view" class="view">
     <div class="detail-back" id="d-back"></div>
     <div class="detail-body">
@@ -1935,45 +2519,33 @@
         <div class="detail-genres" id="d-genres"></div>
         <p class="detail-desc" id="d-desc"></p>
         <div class="detail-acts">
-          <button class="btn-play" id="watch-now-btn" onclick="watchNow()">
-            <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
+          <button class="btn-play" onclick="watchNow()"><svg width="15" height="15" fill="currentColor"
+              viewBox="0 0 24 24">
               <path d="M5 3l14 9-14 9V3z" />
-            </svg>
-            Watch Now
-          </button>
-          <button class="btn-ghost" onclick="scrollDL()">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            </svg>Watch Now</button>
+          <button class="btn-ghost" onclick="scrollDL()"><svg width="15" height="15" fill="none" stroke="currentColor"
+              stroke-width="2" viewBox="0 0 24 24">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Download
-          </button>
-          <button class="btn-ghost" onclick="toggleWL()">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            </svg>Download</button>
+          <button class="btn-ghost" onclick="toggleWL()"><svg width="15" height="15" fill="none" stroke="currentColor"
+              stroke-width="2" viewBox="0 0 24 24">
               <path
                 d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-            Watchlist
-          </button>
+            </svg>Watchlist</button>
         </div>
       </div>
     </div>
-
-    <!-- Episode Selector (TV Series only) -->
     <div id="ep-selector">
       <div class="ep-sel-title">Select Episode</div>
       <div class="season-tabs" id="season-tabs"></div>
       <div class="ep-grid" id="ep-grid"></div>
     </div>
-
-    <!-- Player -->
     <div class="player-sec" id="player-sec" style="display:none">
       <div class="player-wrap" id="p-wrap">
-        <!-- Loading Overlay -->
         <div id="vid-loader">
           <div class="loader-scan"></div>
-          <!-- Film strip top -->
           <div class="film-strip top">
             <div class="film-hole-row">
               <div class="film-cell">
@@ -2010,7 +2582,6 @@
               </div>
             </div>
           </div>
-          <!-- Center content -->
           <div class="loader-center">
             <div class="loader-logo">Cloud<span>Movies</span></div>
             <div class="ring-wrap">
@@ -2018,18 +2589,15 @@
                 <circle class="ring-track" cx="36" cy="36" r="32" />
                 <circle class="ring-fill" cx="36" cy="36" r="32" />
               </svg>
-              <div class="ring-play">
-                <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
+              <div class="ring-play"><svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M5 3l14 9-14 9V3z" />
-                </svg>
-              </div>
+                </svg></div>
             </div>
             <div class="loader-bar-wrap">
               <div class="loader-bar"></div>
             </div>
             <div class="loader-txt" id="loader-txt">Connecting stream…</div>
           </div>
-          <!-- Film strip bottom -->
           <div class="film-strip bottom">
             <div class="film-hole-row">
               <div class="film-cell">
@@ -2067,6 +2635,23 @@
             </div>
           </div>
         </div>
+        <!-- Skip flash overlays -->
+        <div class="skip-flash left" id="skip-flash-left">
+          <div class="skip-bubble">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
+            </svg>
+            <span id="skip-lbl-left">-10s</span>
+          </div>
+        </div>
+        <div class="skip-flash right" id="skip-flash-right">
+          <div class="skip-bubble">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 18l8.5-6L6 6v12zm2.5-6 5.5 4V8l-5.5 4zM16 6h2v12h-2z" />
+            </svg>
+            <span id="skip-lbl-right">+10s</span>
+          </div>
+        </div>
         <video id="vid" preload="metadata" crossorigin="anonymous" playsinline></video>
         <div id="sub-overlay"></div>
         <div class="vid-ctrls">
@@ -2074,7 +2659,7 @@
             <div class="prog-fill" id="prog-fill"></div>
           </div>
           <div class="ctrl-row">
-            <button class="cbtn" id="pp-btn" onclick="togglePP()">
+            <button class="cbtn" onclick="togglePP()">
               <svg id="play-ic" width="17" height="17" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M5 3l14 9-14 9V3z" />
               </svg>
@@ -2083,56 +2668,43 @@
                 <rect x="14" y="4" width="4" height="16" />
               </svg>
             </button>
-            <button class="cbtn" onclick="skip(-10)" title="-10s">
-              <svg width="17" height="17" fill="currentColor" viewBox="0 0 24 24">
+            <button class="cbtn" onclick="skip(-10)"><svg width="17" height="17" fill="currentColor"
+                viewBox="0 0 24 24">
                 <path d="M12.5 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V2l-4 4 4 4V7a5 5 0 0 1 0 10V3z" />
-              </svg>
-            </button>
-            <button class="cbtn" onclick="skip(10)" title="+10s">
-              <svg width="17" height="17" fill="currentColor" viewBox="0 0 24 24">
+              </svg></button>
+            <button class="cbtn" onclick="skip(10)"><svg width="17" height="17" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M11.5 3a9 9 0 1 1-9 9h2a7 7 0 1 0 7-7V2l4 4-4 4V7a5 5 0 0 0 0 10V3z" />
-              </svg>
-            </button>
+              </svg></button>
             <div class="vol-wrap">
-              <button class="cbtn" onclick="toggleMute()">
-                <svg id="vol-ic" width="17" height="17" fill="currentColor" viewBox="0 0 24 24">
+              <button class="cbtn" onclick="toggleMute()"><svg width="17" height="17" fill="currentColor"
+                  viewBox="0 0 24 24">
                   <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-                </svg>
-              </button>
+                </svg></button>
               <input class="vol-range" type="range" min="0" max="1" step=".05" value="1" oninput="setVol(this.value)" />
             </div>
             <span class="time-lbl"><span id="ct">0:00</span> / <span id="dt">0:00</span></span>
             <div class="spacer"></div>
-            <button class="cbtn" onclick="toggleFS()" title="Fullscreen">
-              <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <button class="cbtn" onclick="toggleFS()"><svg width="17" height="17" fill="none" stroke="currentColor"
+                stroke-width="2" viewBox="0 0 24 24">
                 <path
                   d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-              </svg>
-            </button>
+              </svg></button>
           </div>
         </div>
       </div>
-      <!-- Options -->
-      <div class="player-opts" id="p-opts">
-        <div class="opt-group">
-          <label>Resolution</label>
-          <select class="opt-select" id="res-select" onchange="onResChange(this)">
+      <div class="player-opts">
+        <div class="opt-group"><label>Resolution</label><select class="opt-select" id="res-select"
+            onchange="onResChange(this)">
             <option value="">Auto</option>
-          </select>
-        </div>
-        <div class="opt-group">
-          <label>Subtitles</label>
-          <select class="opt-select" id="sub-select" onchange="onSubChange(this)">
+          </select></div>
+        <div class="opt-group"><label>Subtitles</label><select class="opt-select" id="sub-select"
+            onchange="onSubChange(this)">
             <option value="">Off</option>
-          </select>
-        </div>
-        <!-- hidden chip containers kept for JS compat -->
+          </select></div>
         <div style="display:none" id="res-chips"></div>
         <div style="display:none" id="sub-chips"></div>
       </div>
     </div>
-
-    <!-- Downloads -->
     <div class="dl-sec" id="dl-sec">
       <div class="dl-title">Download</div>
       <div class="dl-grid" id="dl-grid">
@@ -2141,8 +2713,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Comments -->
     <div class="cmt-sec">
       <div class="cmt-title">Comments</div>
       <div class="cmt-form">
@@ -2159,9 +2729,7 @@
     </div>
   </div>
 
-  <!-- TOAST -->
   <div id="toast"></div>
-  <!-- MODAL -->
   <div id="modal-bg" onclick="closeModal()">
     <div class="modal" onclick="event.stopPropagation()">
       <h2 id="m-title"></h2>
@@ -2174,146 +2742,58 @@
   </div>
 
   <script>
-    const API = '/api'; // served from backend, relative path = no CORS
-
-    /* ───── STATE ───── */
-    let S = {
-      heroItems: [], heroIdx: 0,
-      item: null, streamData: null,
-      currentSe: 1, currentEp: 1,
-      seasonCache: {},
-      subCues: [], subLang: null,
-      query: '', qType: 0,
-      comments: JSON.parse(localStorage.getItem('cm_c') || '{}'),
-      wl: JSON.parse(localStorage.getItem('cm_wl') || '[]'),
-    };
-    let hls = null, heroTimer;
-
-    /* ───── HELPERS ───── */
+    const API = '/api';
+    let S = { heroItems: [], heroIdx: 0, item: null, streamData: null, currentSe: 1, currentEp: 1, seasonCache: {}, subCues: [], subLang: null, query: '', qType: 0, comments: JSON.parse(localStorage.getItem('cm_c') || '{}'), wl: JSON.parse(localStorage.getItem('cm_wl') || '[]') };
+    let hls = null, heroTimer, liveHls = null;
     const $ = id => document.getElementById(id);
-    const img = c => {
-      if (!c) return '';
-      if (typeof c === 'string') return c;
-      return c.url || c.thumbnail || '';
-    };
+    const img = c => { if (!c) return ''; if (typeof c === 'string') return c; return c.url || c.thumbnail || '' };
     const yr = d => d ? String(d).slice(0, 4) : '';
-    const dur = m => { if (!m) return ''; const h = Math.floor(m / 60), mn = m % 60; return h ? `${h}h ${mn}m` : `${mn}m`; };
-    const ft = s => { s = Math.floor(s || 0); return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`; };
-    const fsz = b => { if (!b) return ''; return b > 1e9 ? (b / 1e9).toFixed(1) + ' GB' : (b / 1e6).toFixed(0) + ' MB'; };
+    const dur = m => { if (!m) return ''; const h = Math.floor(m / 60), mn = m % 60; return h ? `${h}h ${mn}m` : `${mn}m` };
+    const ft = s => { s = Math.floor(s || 0); return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}` };
+    const fsz = b => { if (!b) return ''; return b > 1e9 ? (b / 1e9).toFixed(1) + ' GB' : (b / 1e6).toFixed(0) + ' MB' };
 
-    function toast(msg, type = '') {
-      const t = $('toast');
-      t.textContent = msg; t.className = type;
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 3500);
-    }
-    function showModal(title, text, link) {
-      $('m-title').textContent = title;
-      $('m-text').textContent = text;
-      const b = $('m-btn');
-      if (link) { b.style.display = ''; b.onclick = () => window.open(link, '_blank'); }
-      else b.style.display = 'none';
-      $('modal-bg').classList.add('open');
-    }
-    function closeModal() { $('modal-bg').classList.remove('open'); }
+    function toast(msg, type = '') { const t = $('toast'); t.textContent = msg; t.className = type; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500) }
+    function showModal(title, text, link) { $('m-title').textContent = title; $('m-text').textContent = text; const b = $('m-btn'); if (link) { b.style.display = ''; b.onclick = () => window.open(link, '_blank') } else b.style.display = 'none'; $('modal-bg').classList.add('open') }
+    function closeModal() { $('modal-bg').classList.remove('open') }
+    function view(name) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); $(name + '-view').classList.add('active'); window.scrollTo(0, 0) }
+    async function api(path, opts = {}) { const r = await fetch(API + path, opts); if (!r.ok) { const t = await r.text().catch(() => ''); throw new Error(`API ${r.status}: ${t}`) } return r.json() }
 
-    function view(name) {
-      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      $(name + '-view').classList.add('active');
-      window.scrollTo(0, 0);
-    }
+    /* ── SIDEBAR ── */
+    function toggleSidebar() { $('sidebar').classList.toggle('open'); $('sb-overlay').classList.toggle('open') }
+    function closeSidebar() { $('sidebar').classList.remove('open'); $('sb-overlay').classList.remove('open') }
+    function setSbActive(id) { document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active')); if (id) $(id)?.classList.add('active') }
 
-    async function api(path, opts = {}) {
-      const r = await fetch(API + path, opts);
-      if (!r.ok) {
-        const t = await r.text().catch(() => '');
-        throw new Error(`API ${r.status}: ${t}`);
-      }
-      return r.json();
-    }
-
-    /* ───── CARD ───── */
+    /* ── CARD ── */
     function mkCard(item, delay = 0) {
       const cover = img(item.cover || item.image);
       const score = item.imdbRatingValue ? item.imdbRatingValue.toFixed(1) : '';
       const type = item.subjectType === 1 ? 'Movie' : item.subjectType === 2 ? 'Series' : '';
-      const d = document.createElement('div');
-      d.className = 'card';
-      d.style.animationDelay = delay + 'ms';
+      const d = document.createElement('div'); d.className = 'card'; d.style.animationDelay = delay + 'ms';
       d.onclick = () => showDetail(item);
-      d.innerHTML = `
-    <div class="card-img-wrap">
-      <img class="card-img" src="${cover}" alt="${item.title}" loading="lazy"
-           onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'300\'%3E%3Crect width=\'200\' height=\'300\' fill=\'%23141428\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'48\' fill=\'%23333\' text-anchor=\'middle\' dy=\'.35em\'%3E🎬%3C/text%3E%3C/svg%3E'" />
-      <div class="card-ov">
-        <div class="card-play"><svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg></div>
-      </div>
-      ${type ? `<span class="card-badge">${type}</span>` : ''}
-      ${score ? `<span class="card-score">★ ${score}</span>` : ''}
-    </div>
-    <div class="card-info">
-      <div class="card-name">${item.title}</div>
-      <div class="card-sub">${[yr(item.releaseDate), dur(item.duration)].filter(Boolean).join(' · ')}</div>
-    </div>`;
+      d.innerHTML = `<div class="card-img-wrap"><img class="card-img" src="${cover}" alt="${item.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'300\'%3E%3Crect width=\'200\' height=\'300\' fill=\'%23141428\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'48\' fill=\'%23333\' text-anchor=\'middle\' dy=\'.35em\'%3E🎬%3C/text%3E%3C/svg%3E'" /><div class="card-ov"><div class="card-play"><svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg></div></div>${type ? `<span class="card-badge">${type}</span>` : ''}${score ? `<span class="card-score">★ ${score}</span>` : ''}</div><div class="card-info"><div class="card-name">${item.title}</div><div class="card-sub">${[yr(item.releaseDate), dur(item.duration)].filter(Boolean).join(' · ')}</div></div>`;
       return d;
     }
+    function renderRow(id, items) { const row = $(id); if (!items?.length) { row.innerHTML = '<div class="empty" style="min-width:100%"><p>Nothing to show here.</p></div>'; return } row.innerHTML = ''; items.forEach((it, i) => row.appendChild(mkCard(it, i * 40))) }
 
-    function renderRow(id, items) {
-      const row = $(id);
-      if (!items?.length) { row.innerHTML = '<div class="empty" style="min-width:100%"><p>Nothing to show here.</p></div>'; return; }
-      row.innerHTML = '';
-      items.forEach((it, i) => row.appendChild(mkCard(it, i * 40)));
-    }
-
-    /* ───── HOME ───── */
+    /* ── HOME ── */
     async function loadHome() {
-      try {
-        const hot = await api('/hot');
-        renderRow('row-movies', hot.movies || []);
-        renderRow('row-tv', hot.tv_series || []);
-      } catch (e) {
-        $('row-movies').innerHTML = '<div class="empty" style="min-width:100%"><p>Could not load hot movies.</p></div>';
-        $('row-tv').innerHTML = '<div class="empty" style="min-width:100%"><p>Could not load hot series.</p></div>';
-      }
-      try {
-        const tr = await api('/trending?page=0&per_page=24');
-        renderRow('row-trend', tr.items || []);
-        if (tr.items?.length) {
-          S.heroItems = tr.items.slice(0, 6);
-          setHero(0); buildDots();
-          clearInterval(heroTimer);
-          heroTimer = setInterval(() => setHero((S.heroIdx + 1) % S.heroItems.length), 7000);
-        }
-      } catch (e) {
-        $('row-trend').innerHTML = '<div class="empty" style="min-width:100%"><p>Could not load trending.</p></div>';
-      }
+      try { const hot = await api('/hot'); renderRow('row-movies', hot.movies || []); renderRow('row-tv', hot.tv_series || []) }
+      catch (e) { $('row-movies').innerHTML = '<div class="empty" style="min-width:100%"><p>Could not load.</p></div>'; $('row-tv').innerHTML = '<div class="empty" style="min-width:100%"><p>Could not load.</p></div>' }
+      try { const tr = await api('/trending?page=0&per_page=24'); renderRow('row-trend', tr.items || []); if (tr.items?.length) { S.heroItems = tr.items.slice(0, 6); setHero(0); buildDots(); clearInterval(heroTimer); heroTimer = setInterval(() => setHero((S.heroIdx + 1) % S.heroItems.length), 7000) } }
+      catch (e) { $('row-trend').innerHTML = '<div class="empty" style="min-width:100%"><p>Could not load.</p></div>' }
     }
+    function setHero(idx) { S.heroIdx = idx; const it = S.heroItems[idx]; if (!it) return; $('hero-bg').style.backgroundImage = `url('${img(it.cover)}')`; $('h-title').textContent = it.title; $('h-score').textContent = it.imdbRatingValue?.toFixed(1) || '--'; $('h-year').textContent = yr(it.releaseDate); $('h-dur').textContent = dur(it.duration); $('h-desc').textContent = it.description || 'No description available.'; const genres = typeof it.genre === 'string' ? it.genre.split(',') : (it.genre || []); $('h-genres').innerHTML = genres.slice(0, 3).map(g => `<span>${g.trim()}</span>`).join(''); document.querySelectorAll('.hero-dot').forEach((d, i) => d.classList.toggle('on', i === idx)) }
+    function buildDots() { $('h-dots').innerHTML = S.heroItems.map((_, i) => `<div class="hero-dot${i === 0 ? ' on' : ''}" onclick="setHero(${i})"></div>`).join('') }
+    function heroPlay() { showDetail(S.heroItems[S.heroIdx], true) }
+    function heroInfo() { showDetail(S.heroItems[S.heroIdx]) }
+    function goHome() { setSbActive('sb-home'); view('home') }
+    function goTrending() { setSbActive('sb-trend'); doSearch('', 0) }
 
-    function setHero(idx) {
-      S.heroIdx = idx;
-      const it = S.heroItems[idx]; if (!it) return;
-      $('hero-bg').style.backgroundImage = `url('${img(it.cover)}')`;
-      $('h-title').textContent = it.title;
-      $('h-score').textContent = it.imdbRatingValue?.toFixed(1) || '--';
-      $('h-year').textContent = yr(it.releaseDate);
-      $('h-dur').textContent = dur(it.duration);
-      $('h-desc').textContent = it.description || 'No description available.';
-      const genres = typeof it.genre === 'string' ? it.genre.split(',') : (it.genre || []);
-      $('h-genres').innerHTML = genres.slice(0, 3).map(g => `<span>${g.trim()}</span>`).join('');
-      document.querySelectorAll('.hero-dot').forEach((d, i) => d.classList.toggle('on', i === idx));
-    }
-    function buildDots() {
-      $('h-dots').innerHTML = S.heroItems.map((_, i) => `<div class="hero-dot${i === 0 ? ' on' : ''}" onclick="setHero(${i})"></div>`).join('');
-    }
-    function heroPlay() { showDetail(S.heroItems[S.heroIdx], true); }
-    function heroInfo() { showDetail(S.heroItems[S.heroIdx]); }
-    function goHome() { view('home'); }
-    function goTrending() { doSearch('', 0); }
-
-    /* ───── SEARCH ───── */
+    /* ── SEARCH ── */
     let sTmr;
     async function doSearch(q, type = 0) {
       S.query = q; S.qType = type;
+      if (type === 1) setSbActive('sb-movies'); else if (type === 2) setSbActive('sb-tv');
       view('search');
       $('s-head').textContent = q ? `"${q}"` : type === 1 ? 'Movies' : type === 2 ? 'TV Series' : 'All Content';
       $('s-sub').textContent = 'Loading…';
@@ -2322,618 +2802,453 @@
       try {
         let data;
         if (!q && type === 0) data = await api('/trending?page=0&per_page=48');
-        else {
-          const r = await fetch(API + '/search', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keyword: q || '', subject_type: type, page: 1, per_page: 48 }),
-          });
-          data = await r.json();
-        }
+        else { const r = await fetch(API + '/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword: q || '', subject_type: type, page: 1, per_page: 48 }) }); data = await r.json() }
         const items = data.items || data.subjectList || [];
         $('s-sub').textContent = `${items.length} results found`;
         const grid = $('s-grid');
-        if (!items.length) {
-          grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><svg width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><h3>No Results</h3><p>Try a different keyword or browse trending.</p></div>`;
-          return;
-        }
+        if (!items.length) { grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>No Results</h3><p>Try a different keyword.</p></div>`; return }
         grid.innerHTML = '';
-        items.forEach((it, i) => { const c = mkCard(it, i * 30); c.style.width = ''; grid.appendChild(c); });
-      } catch (e) {
-        $('s-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Error</h3><p>${e.message}</p></div>`;
-      }
+        items.forEach((it, i) => { const c = mkCard(it, i * 30); c.style.width = ''; grid.appendChild(c) });
+      } catch (e) { $('s-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Error</h3><p>${e.message}</p></div>` }
     }
-    function filterType(el, t) {
-      document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
-      el.classList.add('on'); doSearch(S.query, t);
-    }
+    function filterType(el, t) { document.querySelectorAll('.chip').forEach(c => c.classList.remove('on')); el.classList.add('on'); doSearch(S.query, t) }
 
-    /* Search input */
-    $('nav-search').addEventListener('keydown', e => {
-      if (e.key === 'Enter') { $('suggest-box').classList.remove('open'); doSearch(e.target.value.trim(), 0); }
-    });
-    $('nav-search').addEventListener('input', e => {
-      clearTimeout(sTmr);
-      const v = e.target.value.trim();
-      if (v.length >= 2) sTmr = setTimeout(() => loadSuggest(v), 350);
-      else $('suggest-box').classList.remove('open');
-    });
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.search-wrap')) $('suggest-box').classList.remove('open');
-    });
+    /* ── SEARCH SUGGEST — FIX: show movie results with posters ── */
+    $('nav-search').addEventListener('keydown', e => { if (e.key === 'Enter') { $('suggest-box').classList.remove('open'); doSearch(e.target.value.trim(), 0) } });
+    $('nav-search').addEventListener('input', e => { clearTimeout(sTmr); const v = e.target.value.trim(); if (v.length >= 2) sTmr = setTimeout(() => loadSuggest(v), 320); else $('suggest-box').classList.remove('open') });
+    document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) $('suggest-box').classList.remove('open') });
+
     async function loadSuggest(q) {
       try {
-        const d = await api(`/suggest?q=${encodeURIComponent(q)}`);
-        const items = d.items || d || [];
-        if (!items.length) { $('suggest-box').classList.remove('open'); return; }
-        $('suggest-box').innerHTML = items.slice(0, 8).map(it => {
-          const t = typeof it === 'string' ? it : (it.title || it.keyword || '');
-          return `<div class="suggest-item" onclick="doSearch('${t.replace(/'/g, "\\'")}',0)">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <span>${t}</span>
-      </div>`;
-        }).join('');
-        $('suggest-box').classList.add('open');
-      } catch { }
+        // Fetch movie results AND keyword suggestions in parallel
+        const [searchData, suggestData] = await Promise.all([
+          fetch(API + '/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword: q, subject_type: 0, page: 1, per_page: 6 }) }).then(r => r.json()).catch(() => ({ items: [] })),
+          fetch(API + '/suggest?q=' + encodeURIComponent(q)).then(r => r.json()).catch(() => [])
+        ]);
+
+        const movieItems = (searchData.items || []).slice(0, 5);
+        const kwRaw = suggestData.items || suggestData || [];
+        const kwItems = kwRaw.map(it => typeof it === 'string' ? it : (it.title || it.keyword || '')).filter(t => t && !movieItems.some(m => m.title.toLowerCase() === t.toLowerCase())).slice(0, 3);
+
+        const box = $('suggest-box');
+        box.innerHTML = '';
+
+        if (movieItems.length) {
+          box.innerHTML += `<div class="suggest-divider">🎬 Films</div>`;
+          movieItems.forEach(item => {
+            const cover = img(item.cover || item.image);
+            const year = (item.releaseDate || '').slice(0, 4);
+            const typeLbl = item.subjectType === 2 ? 'Series' : 'Movie';
+            const typeCls = item.subjectType === 2 ? 'series' : 'movie';
+            const div = document.createElement('div');
+            div.className = 'suggest-item';
+            div.innerHTML = `<img class="suggest-poster" src="${cover}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'36\' height=\'52\'%3E%3Crect width=\'36\' height=\'52\' fill=\'%23141428\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'20\' fill=\'%23333\' text-anchor=\'middle\' dy=\'.35em\'%3E🎬%3C/text%3E%3C/svg%3E'"/><div class="suggest-info"><div class="suggest-title">${item.title}</div><div class="suggest-meta">${year}${item.imdbRatingValue ? ` · ★${item.imdbRatingValue.toFixed(1)}` : ''}</div></div><span class="suggest-type ${typeCls}">${typeLbl}</span>`;
+            div.onclick = () => { box.classList.remove('open'); $('nav-search').value = item.title; showDetail(item) };
+            box.appendChild(div);
+          });
+        }
+
+        if (kwItems.length) {
+          box.innerHTML += `<div class="suggest-divider">🔍 Suggestions</div>`;
+          kwItems.forEach(t => {
+            const div = document.createElement('div'); div.className = 'suggest-item';
+            div.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3);flex-shrink:0" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><div class="suggest-info"><div class="suggest-title">${t}</div></div>`;
+            div.onclick = () => { box.classList.remove('open'); $('nav-search').value = t; doSearch(t, 0) };
+            box.appendChild(div);
+          });
+        }
+
+        if (!movieItems.length && !kwItems.length) { box.classList.remove('open'); return }
+        box.classList.add('open');
+      } catch (e) { console.error('suggest:', e) }
     }
 
-    /* ───── DETAIL ───── */
+    /* ── DETAIL ── */
     async function showDetail(item, autoPlay = false) {
-      S.item = item;
-      S.currentSe = 1; S.currentEp = 1;  // reset episode
+      S.item = item; S.currentSe = 1; S.currentEp = 1;
       view('detail');
       const cover = img(item.cover || item.image);
-      $('d-back').style.backgroundImage = `url('${cover}')`;
-      $('d-poster').src = cover;
-      $('d-title').textContent = item.title;
+      $('d-back').style.backgroundImage = `url('${cover}')`; $('d-poster').src = cover; $('d-title').textContent = item.title;
       const rating = item.imdbRatingValue ? `<span class="imdb-tag">IMDb ${item.imdbRatingValue.toFixed(1)}</span>` : '';
       const typeTag = item.subjectType === 2 ? '<span style="background:var(--red);padding:2px 10px;border-radius:4px;font-size:.75rem;font-weight:700">SERIES</span>' : '';
-      $('d-meta').innerHTML = [typeTag, rating, yr(item.releaseDate), dur(item.duration), item.countryName]
-        .filter(Boolean).map(x => `<span>${x}</span>`).join('');
-      const genres = typeof item.genre === 'string' ? item.genre.split(',') : (item.genre || []);
-      $('d-genres').innerHTML = genres.map(g => `<span>${g.trim()}</span>`).join('');
-      $('d-desc').textContent = item.description || 'No description available.';
-      $('player-sec').style.display = 'none';
-      $('dl-grid').innerHTML = '<div class="spin-wrap"><div class="spin"></div></div>';
-
-      // TV Series: show episode selector
-      if (item.subjectType === 2) {
-        $('ep-selector').classList.add('show');
-        loadEpisodes(item, 1);
-      } else {
-        $('ep-selector').classList.remove('show');
-        loadDL(item);
-      }
-
+      $('d-meta').innerHTML = [typeTag, rating, yr(item.releaseDate), dur(item.duration), item.countryName].filter(Boolean).map(x => `<span>${x}</span>`).join('');
+      const genres = typeof item.genre === 'string' ? item.genre.split(',') : (item.genre || []); $('d-genres').innerHTML = genres.map(g => `<span>${g.trim()}</span>`).join('');
+      $('d-desc').textContent = item.description || 'No description available.'; $('player-sec').style.display = 'none'; $('dl-grid').innerHTML = '<div class="spin-wrap"><div class="spin"></div></div>';
+      if (item.subjectType === 2) { $('ep-selector').classList.add('show'); loadEpisodes(item, 1) } else { $('ep-selector').classList.remove('show'); loadDL(item) }
       loadCmts();
-      if (autoPlay) {
-        if (item.subjectType === 2) {
-          setTimeout(() => playEpisode(1, 1), 800);
-        } else {
-          setTimeout(() => startPlay(0, 0), 300);
-        }
-      }
+      if (autoPlay) { if (item.subjectType === 2) setTimeout(() => playEpisode(1, 1), 800); else setTimeout(() => startPlay(0, 0), 300) }
     }
 
-    /* ───── DOWNLOAD ───── */
+    /* ── DOWNLOAD ── */
     async function loadDL(item, se = 0, ep = 0) {
-      try {
-        const st = item.subjectType || 1;
-        const actualSe = st === 2 ? (se || 1) : 0;
-        const actualEp = st === 2 ? (ep || 1) : 0;
-        const d = await api(`/download/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=${st}&se=${actualSe}&ep=${actualEp}`);
-        renderDL(d);
-      } catch (e) {
-        $('dl-grid').innerHTML = `<div style="color:var(--text2);padding:16px">
-      Download not available. <a href="https://h5.aoneroom.com/movies/${item.detailPath}" target="_blank" style="color:var(--red)">Open on MovieBox ↗</a>
-    </div>`;
-      }
+      try { const st = item.subjectType || 1; const d = await api(`/download/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=${st}&se=${st === 2 ? (se || 1) : 0}&ep=${st === 2 ? (ep || 1) : 0}`); renderDL(d) }
+      catch (e) { $('dl-grid').innerHTML = `<div style="color:var(--text2);padding:16px">Download not available. <a href="https://h5.aoneroom.com/movies/${item.detailPath}" target="_blank" style="color:var(--red)">Open on MovieBox ↗</a></div>` }
     }
-    function renderDL(data) {
-      const g = $('dl-grid');
-      const list = (data.downloads || []).sort((a, b) => (b.resolution || 0) - (a.resolution || 0));
-      if (!list.length) { g.innerHTML = '<div style="color:var(--text2);padding:16px">No download links available.</div>'; return; }
-      g.innerHTML = '';
-      list.forEach(f => {
-        const d = document.createElement('div'); d.className = 'dl-card';
-        d.innerHTML = `<div class="dl-icon"><svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
-      <div><div class="dl-qual">${f.resolution ? f.resolution + 'p' : 'HD'}</div><div class="dl-size">${fsz(f.size)}</div></div>`;
-        d.onclick = () => triggerDL(f);
-        g.appendChild(d);
-      });
-    }
-    function triggerDL(f) {
-      if (f.url) {
-        const a = document.createElement('a'); a.href = f.url; a.download = S.item?.title || 'movie'; a.target = '_blank'; a.click();
-        toast('Download started! ⬇️', 'ok');
-      } else {
-        showModal('Download', 'Open MovieBox to download this title.', `https://h5.aoneroom.com/movies/${S.item?.detailPath}`);
-      }
-    }
-    function scrollDL() { $('dl-sec').scrollIntoView({ behavior: 'smooth' }); }
+    function renderDL(data) { const g = $('dl-grid'); const list = (data.downloads || []).sort((a, b) => (b.resolution || 0) - (a.resolution || 0)); if (!list.length) { g.innerHTML = '<div style="color:var(--text2);padding:16px">No download links available.</div>'; return } g.innerHTML = ''; list.forEach(f => { const d = document.createElement('div'); d.className = 'dl-card'; d.innerHTML = `<div class="dl-icon"><svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div><div><div class="dl-qual">${f.resolution ? f.resolution + 'p' : 'HD'}</div><div class="dl-size">${fsz(f.size)}</div></div>`; d.onclick = () => triggerDL(f); g.appendChild(d) }) }
+    function triggerDL(f) { if (f.url) { const a = document.createElement('a'); a.href = f.url; a.download = S.item?.title || 'movie'; a.target = '_blank'; a.click(); toast('Download started! ⬇️', 'ok') } else showModal('Download', 'Open MovieBox to download.', `https://h5.aoneroom.com/movies/${S.item?.detailPath}`) }
+    function scrollDL() { $('dl-sec').scrollIntoView({ behavior: 'smooth' }) }
 
-
-    /* ───── EPISODE SELECTOR ───── */
+    /* ── EPISODE SELECTOR ── */
     const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-    // Probe ONE episode — backend handles retry on 429
-    async function probeOne(url) {
-      try {
-        const r = await fetch(url);
-        if (r.status === 429) return false; // rate limited, skip
-        const d = await r.json();
-        return (d.streams || []).length > 0 || (d.hls || []).length > 0;
-      } catch { return false; }
-    }
+    async function probeOne(url) { try { const r = await fetch(url); if (r.status === 429) return false; const d = await r.json(); return (d.streams || []).length > 0 || (d.hls || []).length > 0 } catch { return false } }
 
     async function loadEpisodes(item, season) {
-      S.currentSe = season;
-      const tabsEl = $('season-tabs');
-      const gridEl = $('ep-grid');
-      tabsEl.innerHTML = '';
-      gridEl.innerHTML = '<div class="spin-wrap"><div class="spin"></div><span class="spin-lbl">Detecting seasons…</span></div>';
-
+      S.currentSe = season; const tabsEl = $('season-tabs'), gridEl = $('ep-grid'); tabsEl.innerHTML = ''; gridEl.innerHTML = '<div class="spin-wrap"><div class="spin"></div><span class="spin-lbl">Detecting seasons…</span></div>';
       const cacheKey = item.subjectId;
-      if (!S.seasonCache[cacheKey]) {
-        const validSeasons = [];
-        let misses = 0;
-        for (let s = 1; s <= 8; s++) {
-          await sleep(s > 1 ? 500 : 0); // 500ms between season probes
-          const url = `${API}/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=2&se=${s}&ep=1`;
-          const ok = await probeOne(url);
-          if (ok) { validSeasons.push(s); misses = 0; }
-          else { misses++; if (misses >= 2) break; }
-        }
-        S.seasonCache[cacheKey] = validSeasons.length ? validSeasons : [1];
-      }
-
-      const seasons = S.seasonCache[cacheKey];
-      tabsEl.innerHTML = '';
-      seasons.forEach(s => {
-        const tab = document.createElement('button');
-        tab.className = 'stab' + (s === season ? ' on' : '');
-        tab.textContent = `Season ${s}`;
-        tab.onclick = () => {
-          document.querySelectorAll('.stab').forEach(t => t.classList.remove('on'));
-          tab.classList.add('on');
-          loadEpisodeList(item, s);
-        };
-        tabsEl.appendChild(tab);
-      });
-
+      if (!S.seasonCache[cacheKey]) { const validSeasons = []; let misses = 0; for (let s = 1; s <= 8; s++) { await sleep(s > 1 ? 500 : 0); const url = `${API}/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=2&se=${s}&ep=1`; const ok = await probeOne(url); if (ok) { validSeasons.push(s); misses = 0 } else { misses++; if (misses >= 2) break } } S.seasonCache[cacheKey] = validSeasons.length ? validSeasons : [1] }
+      const seasons = S.seasonCache[cacheKey]; tabsEl.innerHTML = '';
+      seasons.forEach(s => { const tab = document.createElement('button'); tab.className = 'stab' + (s === season ? ' on' : ''); tab.textContent = `Season ${s}`; tab.onclick = () => { document.querySelectorAll('.stab').forEach(t => t.classList.remove('on')); tab.classList.add('on'); loadEpisodeList(item, s) }; tabsEl.appendChild(tab) });
       loadEpisodeList(item, season);
     }
-
     async function loadEpisodeList(item, season) {
-      S.currentSe = season;
-      const gridEl = $('ep-grid');
-      gridEl.innerHTML = '<div class="spin-wrap"><div class="spin"></div><span class="spin-lbl">Loading episodes…</span></div>';
-
-      const episodes = [];
-      let misses = 0;
-      for (let ep = 1; ep <= 30; ep++) {
-        await sleep(ep > 1 ? 400 : 0); // 400ms between episode probes — respects rate limit
-        const url = `${API}/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=2&se=${season}&ep=${ep}`;
-        const ok = await probeOne(url);
-        if (ok) {
-          episodes.push(ep); misses = 0;
-          const card = document.createElement('div');
-          card.className = 'ep-card' + (S.currentSe === season && S.currentEp === ep ? ' playing' : '');
-          card.id = `ep-${season}-${ep}`;
-          card.innerHTML = `
-        <div class="ep-num">${ep}</div>
-        <div class="ep-info">
-          <div class="ep-label">Episode ${ep}</div>
-          <div class="ep-sub">Season ${season}</div>
-        </div>`;
-          card.onclick = () => playEpisode(season, ep);
-          if (ep === 1) gridEl.innerHTML = '';
-          gridEl.appendChild(card);
-        } else {
-          misses++;
-          if (misses >= 2) break;
-        }
-      }
-
-      if (!episodes.length) {
-        gridEl.innerHTML = '<div style="color:var(--text3);padding:16px;font-size:.9rem">No episodes found. Try another season.</div>';
-        return;
-      }
+      S.currentSe = season; const gridEl = $('ep-grid'); gridEl.innerHTML = '<div class="spin-wrap"><div class="spin"></div><span class="spin-lbl">Loading episodes…</span></div>';
+      const episodes = []; let misses = 0;
+      for (let ep = 1; ep <= 30; ep++) { await sleep(ep > 1 ? 400 : 0); const url = `${API}/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=2&se=${season}&ep=${ep}`; const ok = await probeOne(url); if (ok) { episodes.push(ep); misses = 0; const card = document.createElement('div'); card.className = 'ep-card' + (S.currentSe === season && S.currentEp === ep ? ' playing' : ''); card.id = `ep-${season}-${ep}`; card.innerHTML = `<div class="ep-num">${ep}</div><div class="ep-info"><div class="ep-label">Episode ${ep}</div><div class="ep-sub">Season ${season}</div></div>`; card.onclick = () => playEpisode(season, ep); if (ep === 1) gridEl.innerHTML = ''; gridEl.appendChild(card) } else { misses++; if (misses >= 2) break } }
+      if (!episodes.length) { gridEl.innerHTML = '<div style="color:var(--text3);padding:16px;font-size:.9rem">No episodes found.</div>'; return }
       loadDL(item, season, 1);
     }
-
     async function playEpisode(season, ep) {
-      const item = S.item; if (!item) return;
-      S.currentSe = season; S.currentEp = ep;
-
-      // Update UI — mark active card
-      document.querySelectorAll('.ep-card').forEach(c => c.classList.remove('playing'));
-      const card = $(`ep-${season}-${ep}`);
-      if (card) card.classList.add('playing');
-
-      // Load DL for this episode
-      loadDL(item, season, ep);
-
-      // Play
-      $('player-sec').style.display = 'block';
-      $('player-sec').scrollIntoView({ behavior: 'smooth' });
-      stopHls();
-      $('res-chips').innerHTML = '<span class="ochip">Loading…</span>';
-      $('sub-chips').innerHTML = '<span class="ochip on" onclick="subOff(this)">Off</span>';
-
-      try {
-        const st = item.subjectType || 2;
-        const d = await api(`/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=${st}&se=${season}&ep=${ep}`);
-        S.streamData = d; renderOpts(d);
-        const streams = (d.streams || []).sort((a, b) => (b.resolution || 0) - (a.resolution || 0));
-        if (streams.length) playUrl(streams[0].url, streams[0].resolution);
-        else if (d.hls?.length) playUrl(d.hls[0].url, 'HLS');
-        else showModal('Watch on MovieBox', `No stream for S${season}E${ep}.`, `https://h5.aoneroom.com/movies/${item.detailPath}?id=${item.subjectId}`);
-      } catch (e) {
-        showModal('Watch on MovieBox', 'Open MovieBox to stream this episode.', `https://h5.aoneroom.com/movies/${item.detailPath}?id=${item.subjectId}`);
-      }
+      const item = S.item; if (!item) return; S.currentSe = season; S.currentEp = ep;
+      document.querySelectorAll('.ep-card').forEach(c => c.classList.remove('playing')); const card = $(`ep-${season}-${ep}`); if (card) card.classList.add('playing');
+      loadDL(item, season, ep); $('player-sec').style.display = 'block'; $('player-sec').scrollIntoView({ behavior: 'smooth' }); stopHls(); $('res-chips').innerHTML = '<span class="ochip">Loading…</span>'; $('sub-chips').innerHTML = '<span class="ochip on">Off</span>';
+      try { const st = item.subjectType || 2; const d = await api(`/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=${st}&se=${season}&ep=${ep}`); S.streamData = d; renderOpts(d); const streams = (d.streams || []).sort((a, b) => (b.resolution || 0) - (a.resolution || 0)); if (streams.length) playUrl(streams[0].url, streams[0].resolution); else if (d.hls?.length) playUrl(d.hls[0].url, 'HLS'); else showModal('Watch on MovieBox', `No stream for S${season}E${ep}.`, `https://h5.aoneroom.com/movies/${item.detailPath}?id=${item.subjectId}`) }
+      catch (e) { showModal('Watch on MovieBox', 'Open MovieBox to stream this episode.', `https://h5.aoneroom.com/movies/${item.detailPath}?id=${item.subjectId}`) }
     }
 
-    /* ───── PLAYER ───── */
+    /* ── PLAYER ── */
     const vid = $('vid');
-
-    function watchNow() {
-      const item = S.item; if (!item) return;
-      if (item.subjectType === 2) {
-        // TV Series: scroll to episode selector
-        $('ep-selector').scrollIntoView({ behavior: 'smooth' });
-        toast('Select an episode to watch 📺');
-      } else {
-        startPlay();
-      }
-    }
-
+    function watchNow() { const item = S.item; if (!item) return; if (item.subjectType === 2) { $('ep-selector').scrollIntoView({ behavior: 'smooth' }); toast('Select an episode to watch 📺') } else startPlay() }
     async function startPlay(se = 0, ep = 0) {
       const item = S.item; if (!item) return;
-
-      // If TV series and no se/ep given, route to episode selector
-      if (item.subjectType === 2 && se === 0) {
-        $('ep-selector').scrollIntoView({ behavior: 'smooth' });
-        toast('Select an episode to watch 📺');
-        return;
-      }
-
-      $('player-sec').style.display = 'block';
-      $('player-sec').scrollIntoView({ behavior: 'smooth' });
-      stopHls();
-      $('res-chips').innerHTML = '<span class="ochip">Loading…</span>';
-      $('sub-chips').innerHTML = '<span class="ochip on" onclick="subOff(this)">Off</span>';
-      try {
-        const st = item.subjectType || 1;
-        const seParam = st === 2 ? se : 0;
-        const epParam = st === 2 ? ep : 0;
-        const d = await api(`/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=${st}&se=${seParam}&ep=${epParam}`);
-        S.streamData = d; renderOpts(d);
-        const streams = (d.streams || []).sort((a, b) => (b.resolution || 0) - (a.resolution || 0));
-        if (streams.length) playUrl(streams[0].url, streams[0].resolution);
-        else if (d.hls?.length) playUrl(d.hls[0].url, 'HLS');
-        else showModal('Watch on MovieBox', 'No stream available in browser.', `https://h5.aoneroom.com/movies/${item.detailPath}?id=${item.subjectId}`);
-      } catch (e) {
-        showModal('Watch on MovieBox', 'Open MovieBox to stream this title.', `https://h5.aoneroom.com/movies/${item.detailPath}?id=${item.subjectId}`);
-      }
+      if (item.subjectType === 2 && se === 0) { $('ep-selector').scrollIntoView({ behavior: 'smooth' }); toast('Select an episode to watch 📺'); return }
+      $('player-sec').style.display = 'block'; $('player-sec').scrollIntoView({ behavior: 'smooth' }); stopHls(); $('res-chips').innerHTML = '<span class="ochip">Loading…</span>'; $('sub-chips').innerHTML = '<span class="ochip on">Off</span>';
+      try { const st = item.subjectType || 1; const seParam = st === 2 ? se : 0; const epParam = st === 2 ? ep : 0; const d = await api(`/stream/${item.subjectId}?detail_path=${encodeURIComponent(item.detailPath || '')}&subject_type=${st}&se=${seParam}&ep=${epParam}`); S.streamData = d; renderOpts(d); const streams = (d.streams || []).sort((a, b) => (b.resolution || 0) - (a.resolution || 0)); if (streams.length) playUrl(streams[0].url, streams[0].resolution); else if (d.hls?.length) playUrl(d.hls[0].url, 'HLS'); else showModal('Watch on MovieBox', 'No stream available.', `https://h5.aoneroom.com/movies/${item.detailPath}?id=${item.subjectId}`) }
+      catch (e) { showModal('Watch on MovieBox', 'Open MovieBox to stream.', `https://h5.aoneroom.com/movies/${item.detailPath}?id=${item.subjectId}`) }
     }
 
-    // Store stream/caption data for select handlers
     let _streamList = [], _captionList = [];
-
     function renderOpts(d) {
       _streamList = (d.streams || []).sort((a, b) => (b.resolution || 0) - (a.resolution || 0));
-      _captionList = [...(d.captions || [])].sort((a, b) => {
-        const pri = l => { l = (l || '').toLowerCase(); if (l === 'id' || l.includes('indo')) return 0; if (l === 'en' || l.includes('engl')) return 1; return 2; };
-        return pri(a.lan) - pri(b.lan);
-      });
-
-      // ── Resolution select ──────────────────────────────────────────────────────
-      const rs = $('res-select');
-      rs.innerHTML = '';
-      if (!_streamList.length && !(d.hls || []).length) {
-        rs.innerHTML = '<option value="">Auto</option>';
-      } else {
-        _streamList.forEach((s, i) => {
-          const opt = document.createElement('option');
-          opt.value = i;
-          opt.textContent = s.resolution ? s.resolution + 'p' : 'HD';
-          rs.appendChild(opt);
-        });
-        (d.hls || []).forEach((h, i) => {
-          const opt = document.createElement('option');
-          opt.value = 'hls_' + i;
-          opt.textContent = h.resolution ? 'HLS ' + h.resolution + 'p' : 'HLS';
-          rs.appendChild(opt);
-        });
-      }
-
-      // ── Subtitle select ────────────────────────────────────────────────────────
-      const ss = $('sub-select');
-      ss.innerHTML = '<option value="">Off</option>';
-      _captionList.forEach((cap, i) => {
-        const opt = document.createElement('option');
-        opt.value = i;
-        const flag = cap.lan === 'id' || cap.lan === 'Indonesian' ? '🇮🇩 ' : cap.lan === 'en' || cap.lan === 'English' ? '🇺🇸 ' : '';
-        opt.textContent = flag + (cap.lanName || cap.lan);
-        ss.appendChild(opt);
-      });
+      _captionList = [...(d.captions || [])].sort((a, b) => { const p = l => { l = (l || '').toLowerCase(); if (l === 'id' || l.includes('indo')) return 0; if (l === 'en' || l.includes('engl')) return 1; return 2 }; return p(a.lan) - p(b.lan) });
+      const rs = $('res-select'); rs.innerHTML = '';
+      if (!_streamList.length && !(d.hls || []).length) { rs.innerHTML = '<option value="">Auto</option>' }
+      else { _streamList.forEach((s, i) => { const opt = document.createElement('option'); opt.value = i; opt.textContent = s.resolution ? s.resolution + 'p' : 'HD'; rs.appendChild(opt) }); (d.hls || []).forEach((h, i) => { const opt = document.createElement('option'); opt.value = 'hls_' + i; opt.textContent = h.resolution ? 'HLS ' + h.resolution + 'p' : 'HLS'; rs.appendChild(opt) }) }
+      const ss = $('sub-select'); ss.innerHTML = '<option value="">Off</option>';
+      _captionList.forEach((cap, i) => { const opt = document.createElement('option'); opt.value = i; const flag = cap.lan === 'id' || cap.lan === 'Indonesian' ? '🇮🇩 ' : cap.lan === 'en' || cap.lan === 'English' ? '🇺🇸 ' : ''; opt.textContent = flag + (cap.lanName || cap.lan); ss.appendChild(opt) });
     }
+    function onResChange(sel) { const val = sel.value; if (!val) return; if (val.startsWith('hls_')) { const h = (S.streamData?.hls || [])[parseInt(val.replace('hls_', ''))]; if (h) playUrl(h.url, 'HLS') } else { const s = _streamList[parseInt(val)]; if (s) playUrl(s.url, s.resolution) } }
+    function onSubChange(sel) { const val = sel.value; if (!val) { S.subCues = []; S.subLang = null; $('sub-overlay').style.display = 'none'; return } const cap = _captionList[parseInt(val)]; if (cap) loadSub(null, cap) }
 
-    function onResChange(sel) {
-      const val = sel.value;
-      if (!val) return;
-      if (val.startsWith('hls_')) {
-        const hls = (S.streamData?.hls || [])[parseInt(val.replace('hls_', ''))];
-        if (hls) playUrl(hls.url, 'HLS');
-      } else {
-        const s = _streamList[parseInt(val)];
-        if (s) playUrl(s.url, s.resolution);
-      }
-    }
-
-    function onSubChange(sel) {
-      const val = sel.value;
-      if (!val) {
-        S.subCues = []; S.subLang = null;
-        $('sub-overlay').style.display = 'none';
-        return;
-      }
-      const cap = _captionList[parseInt(val)];
-      if (cap) loadSub(null, cap);
-    }
-
-    function showLoader(txt) {
-      const l = $('vid-loader');
-      l.classList.remove('hidden');
-      if (txt) $('loader-txt').textContent = txt;
-    }
-    function hideLoader() {
-      const l = $('vid-loader');
-      l.classList.add('hidden');
-    }
-
-    const LOADER_MSGS = [
-      'Connecting stream…',
-      'Fetching video data…',
-      'Buffering frames…',
-      'Almost there…',
-      'Starting playback…',
-    ];
-    let loaderMsgIdx = 0, loaderMsgTimer;
-    function cycleLoaderMsg() {
-      clearInterval(loaderMsgTimer);
-      loaderMsgIdx = 0;
-      $('loader-txt').textContent = LOADER_MSGS[0];
-      loaderMsgTimer = setInterval(() => {
-        loaderMsgIdx = (loaderMsgIdx + 1) % LOADER_MSGS.length;
-        $('loader-txt').textContent = LOADER_MSGS[loaderMsgIdx];
-      }, 1400);
-    }
-    function stopLoaderMsg() { clearInterval(loaderMsgTimer); }
+    function showLoader(txt) { const l = $('vid-loader'); l.classList.remove('hidden'); if (txt) $('loader-txt').textContent = txt }
+    function hideLoader() { $('vid-loader').classList.add('hidden') }
+    const LOADER_MSGS = ['Connecting stream…', 'Fetching video data…', 'Buffering frames…', 'Almost there…', 'Starting playback…'];
+    let _loaderIdx = 0, _loaderTimer;
+    function cycleLoaderMsg() { clearInterval(_loaderTimer); _loaderIdx = 0; if ($('loader-txt')) $('loader-txt').textContent = LOADER_MSGS[0]; _loaderTimer = setInterval(() => { _loaderIdx = (_loaderIdx + 1) % LOADER_MSGS.length; if ($('loader-txt')) $('loader-txt').textContent = LOADER_MSGS[_loaderIdx] }, 1400) }
+    function stopLoaderMsg() { clearInterval(_loaderTimer) }
 
     function playUrl(url, res) {
-      if (!url) { toast('Stream URL not available', 'err'); return; }
-      stopHls();
-      showLoader('Connecting stream…');
-      cycleLoaderMsg();
-
+      if (!url) { toast('Stream URL not available', 'err'); return }
+      stopHls(); showLoader('Connecting stream…'); cycleLoaderMsg();
       const isHLS = url.includes('.m3u8') || url.includes('hls');
-      if (isHLS && Hls.isSupported()) {
-        hls = new Hls({ enableWorker: false });
-        hls.loadSource(url);
-        hls.attachMedia(vid);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          vid.play().catch(() => { });
-          $('p-wrap').classList.remove('paused');
-        });
-        hls.on(Hls.Events.ERROR, (_, d) => {
-          if (d.fatal) { stopLoaderMsg(); hideLoader(); toast('Stream error — try another resolution.', 'err'); }
-        });
-      } else {
-        vid.src = url;
-        vid.load();
-        vid.play().catch(() => { });
-        $('p-wrap').classList.remove('paused');
-      }
+      if (isHLS && Hls.isSupported()) { hls = new Hls({ enableWorker: false }); hls.loadSource(url); hls.attachMedia(vid); hls.on(Hls.Events.MANIFEST_PARSED, () => { vid.play().catch(() => { }); $('p-wrap').classList.remove('paused') }); hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) { stopLoaderMsg(); hideLoader(); toast('Stream error — try another resolution.', 'err') } }) }
+      else { vid.src = url; vid.load(); vid.play().catch(() => { }); $('p-wrap').classList.remove('paused') }
     }
-    function stopHls() { if (hls) { hls.destroy(); hls = null; } }
+    function stopHls() { if (hls) { hls.destroy(); hls = null } }
 
-    /* Video controls */
-    vid.addEventListener('timeupdate', () => {
-      if (!vid.duration) return;
-      $('prog-fill').style.width = (vid.currentTime / vid.duration * 100) + '%';
-      $('ct').textContent = ft(vid.currentTime);
-      updateSub(vid.currentTime);
-    });
-    vid.addEventListener('loadedmetadata', () => { $('dt').textContent = ft(vid.duration); });
-    vid.addEventListener('canplay', () => { stopLoaderMsg(); hideLoader(); });
-    vid.addEventListener('playing', () => { stopLoaderMsg(); hideLoader(); $('play-ic').style.display = 'none'; $('pause-ic').style.display = ''; $('p-wrap').classList.remove('paused'); });
-    vid.addEventListener('play', () => { $('play-ic').style.display = 'none'; $('pause-ic').style.display = ''; $('p-wrap').classList.remove('paused'); });
-    vid.addEventListener('waiting', () => { showLoader('Buffering…'); });
-    vid.addEventListener('pause', () => { stopLoaderMsg(); hideLoader(); $('play-ic').style.display = ''; $('pause-ic').style.display = 'none'; $('p-wrap').classList.add('paused'); });
+    /* Video events */
+    vid.addEventListener('timeupdate', () => { if (!vid.duration) return; $('prog-fill').style.width = (vid.currentTime / vid.duration * 100) + '%'; $('ct').textContent = ft(vid.currentTime); updateSub(vid.currentTime) });
+    vid.addEventListener('loadedmetadata', () => { $('dt').textContent = ft(vid.duration) });
+    vid.addEventListener('canplay', () => { stopLoaderMsg(); hideLoader() });
+    vid.addEventListener('playing', () => { stopLoaderMsg(); hideLoader(); $('play-ic').style.display = 'none'; $('pause-ic').style.display = ''; $('p-wrap').classList.remove('paused') });
+    vid.addEventListener('waiting', () => { showLoader('Buffering…') });
+    vid.addEventListener('play', () => { $('play-ic').style.display = 'none'; $('pause-ic').style.display = ''; $('p-wrap').classList.remove('paused') });
+    vid.addEventListener('pause', () => { stopLoaderMsg(); hideLoader(); $('play-ic').style.display = ''; $('pause-ic').style.display = 'none'; $('p-wrap').classList.add('paused') });
 
-    // ── Auto-hide controls after 3s of no interaction ──────────────────────────
+    /* ── AUTO HIDE CONTROLS ── */
     let _ctrlTimer;
-    function showCtrls() {
-      $('p-wrap').classList.add('show-ctrls');
-      clearTimeout(_ctrlTimer);
-      if (!vid.paused) _ctrlTimer = setTimeout(() => $('p-wrap').classList.remove('show-ctrls'), 3000);
-    }
+    function showCtrls() { $('p-wrap').classList.add('show-ctrls'); clearTimeout(_ctrlTimer); if (!vid.paused) _ctrlTimer = setTimeout(() => $('p-wrap').classList.remove('show-ctrls'), 3000) }
     $('p-wrap').addEventListener('mousemove', showCtrls);
-    $('p-wrap').addEventListener('touchstart', showCtrls);
-    $('p-wrap').addEventListener('mouseleave', () => {
-      if (!vid.paused) { clearTimeout(_ctrlTimer); $('p-wrap').classList.remove('show-ctrls'); }
-    });
-    vid.addEventListener('click', togglePP);
+    $('p-wrap').addEventListener('mouseleave', () => { if (!vid.paused) { clearTimeout(_ctrlTimer); $('p-wrap').classList.remove('show-ctrls') } });
 
-    function togglePP() { vid.paused ? vid.play() : vid.pause(); }
-    function skip(s) { vid.currentTime = Math.max(0, vid.currentTime + s); }
-    function setVol(v) { vid.volume = +v; }
-    function toggleMute() { vid.muted = !vid.muted; }
-    function seekVid(e) { const p = e.currentTarget; vid.currentTime = (e.offsetX / p.offsetWidth) * (vid.duration || 0); }
-    function toggleFS() { const w = $('p-wrap'); document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen(); }
+    /* ── MULTI-TAP SKIP (2 tap = ±10s, 3 tap = ±15s, N tap = N*5s) ── 
+       Play/Pause hanya dari tombol di controls, BUKAN dari klik video */
+    let _tapTimer = null, _tapCount = 0, _tapSide = null, _flashTimer = null;
 
-    /* ───── SUBTITLES ───── */
-    async function loadSub(chip, cap) {
-      // chip can be null when called from select dropdown
-      if (chip) {
-        document.querySelectorAll('#sub-chips .ochip').forEach(c => c.classList.remove('on'));
-        chip.classList.add('on');
-        chip.textContent = '⏳ Loading…';
+    function doFlash(side, secs) {
+      const el = $(side === 'left' ? 'skip-flash-left' : 'skip-flash-right');
+      const lbl = $(side === 'left' ? 'skip-lbl-left' : 'skip-lbl-right');
+      if (lbl) lbl.textContent = (side === 'left' ? '-' : '+') + secs + 's';
+      el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+      clearTimeout(_flashTimer); _flashTimer = setTimeout(() => el.classList.remove('show'), 600);
+    }
+
+    $('p-wrap').addEventListener('click', function (e) {
+      // Ignore clicks on controls area, loader, or skip flash
+      if (e.target.closest('.vid-ctrls') || e.target.closest('#vid-loader') || e.target.closest('.skip-flash')) return;
+
+      const rect = this.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const side = x < rect.width / 2 ? 'left' : 'right';
+
+      // Reset if side changed
+      if (_tapSide !== null && _tapSide !== side) _tapCount = 0;
+      _tapSide = side;
+      _tapCount++;
+
+      clearTimeout(_tapTimer);
+
+      // Show preview flash while tapping
+      if (_tapCount >= 2) {
+        const secs = _tapCount * 5;
+        doFlash(side, secs);
       }
-      try {
-        const r = await fetch(cap.url);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const txt = await r.text();
-        if (!txt.trim()) throw new Error('Empty subtitle file');
-        S.subCues = parseSRT(txt);
-        S.subLang = cap.lan;
-        if (chip) chip.textContent = cap.lanName || cap.lan;
-        toast('✅ Subtitles: ' + (cap.lanName || cap.lan), 'ok');
-      } catch (e) {
-        if (chip) {
-          chip.textContent = cap.lanName || cap.lan;
-          document.querySelectorAll('#sub-chips .ochip').forEach(c => c.classList.remove('on'));
+
+      _tapTimer = setTimeout(() => {
+        if (_tapCount >= 2) {
+          const secs = _tapCount * 5; // 2 taps=10s, 3 taps=15s, etc
+          skip(side === 'left' ? -secs : secs);
+        } else {
+          // Single tap = just show controls
+          showCtrls();
         }
-        $('sub-select').value = '';
-        toast('❌ Could not load subtitles: ' + e.message, 'err');
-      }
-    }
-    function subOff(chip) {
-      if (chip) {
-        document.querySelectorAll('#sub-chips .ochip').forEach(c => c.classList.remove('on'));
-        chip.classList.add('on');
-      }
-      S.subCues = []; S.subLang = null;
-      $('sub-overlay').style.display = 'none';
-    }
-    function parseSRT(txt) {
-      const cues = [];
-      for (const block of txt.trim().split(/\n\s*\n/)) {
-        const lines = block.trim().split('\n');
-        const tl = lines.find(l => l.includes('-->'));
-        if (!tl) continue;
-        const [s, e] = tl.split('-->').map(x => x.trim());
-        const text = lines.slice(lines.indexOf(tl) + 1).join('\n').replace(/<[^>]+>/g, '');
-        if (text) cues.push({ s: parseSRTt(s), e: parseSRTt(e), t: text });
-      }
-      return cues;
-    }
-    function parseSRTt(s) { const [h, m, se] = s.split(':'); const [ss, ms] = se.split(','); return +h * 3600 + +m * 60 + +ss + +ms / 1000; }
-    function updateSub(t) {
-      const o = $('sub-overlay');
-      if (!S.subCues.length) { o.style.display = 'none'; return; }
-      const c = S.subCues.find(x => t >= x.s && t <= x.e);
-      if (c) { o.textContent = c.t; o.style.display = 'block'; } else o.style.display = 'none';
-    }
+        _tapCount = 0; _tapSide = null;
+      }, 350);
+    });
 
-    /* ───── WATCHLIST ───── */
-    function toggleWL() {
-      const it = S.item; if (!it) return;
-      const i = S.wl.findIndex(x => x.subjectId === it.subjectId);
-      if (i >= 0) { S.wl.splice(i, 1); toast('Removed from watchlist'); }
-      else { S.wl.push({ subjectId: it.subjectId, title: it.title, cover: img(it.cover) }); toast('Added to watchlist! 🎬', 'ok'); }
-      localStorage.setItem('cm_wl', JSON.stringify(S.wl));
-    }
+    // Touch double-tap support
+    let _lastTapTime = 0, _lastTapSide = null, _touchTapCount = 0, _touchTimer = null;
+    $('p-wrap').addEventListener('touchend', function (e) {
+      if (e.target.closest('.vid-ctrls') || e.target.closest('#vid-loader')) return;
+      e.preventDefault();
+      const touch = e.changedTouches[0];
+      const rect = this.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const side = x < rect.width / 2 ? 'left' : 'right';
 
-    /* ───── COMMENTS ───── */
+      if (_lastTapSide !== null && _lastTapSide !== side) _touchTapCount = 0;
+      _lastTapSide = side; _touchTapCount++;
+
+      clearTimeout(_touchTimer);
+      if (_touchTapCount >= 2) {
+        const secs = _touchTapCount * 5;
+        doFlash(side, secs);
+      }
+
+      _touchTimer = setTimeout(() => {
+        if (_touchTapCount >= 2) {
+          const secs = _touchTapCount * 5;
+          skip(side === 'left' ? -secs : secs);
+        } else {
+          showCtrls();
+        }
+        _touchTapCount = 0; _lastTapSide = null;
+      }, 350);
+    }, { passive: false });
+
+    /* ── VIDEO CONTROLS ── */
+    function togglePP() { vid.paused ? vid.play() : vid.pause() }
+    function skip(s) { vid.currentTime = Math.max(0, vid.currentTime + s) }
+    function setVol(v) { vid.volume = +v }
+    function toggleMute() { vid.muted = !vid.muted }
+    function seekVid(e) { const p = e.currentTarget; vid.currentTime = (e.offsetX / p.offsetWidth) * (vid.duration || 0) }
+    function toggleFS() { const w = $('p-wrap'); document.fullscreenElement ? document.exitFullscreen() : w.requestFullscreen() }
+
+    /* ── SUBTITLES ── */
+    async function loadSub(chip, cap) {
+      if (chip) { document.querySelectorAll('#sub-chips .ochip').forEach(c => c.classList.remove('on')); chip.classList.add('on'); chip.textContent = '⏳' }
+      try { const r = await fetch(cap.url); if (!r.ok) throw new Error('HTTP ' + r.status); const txt = await r.text(); if (!txt.trim()) throw new Error('Empty'); S.subCues = parseSRT(txt); S.subLang = cap.lan; if (chip) chip.textContent = cap.lanName || cap.lan; toast('✅ Subtitles: ' + (cap.lanName || cap.lan), 'ok') }
+      catch (e) { if (chip) { chip.textContent = cap.lanName || cap.lan; document.querySelectorAll('#sub-chips .ochip').forEach(c => c.classList.remove('on')) } $('sub-select').value = ''; toast('❌ Could not load subtitles', 'err') }
+    }
+    function parseSRT(txt) { const cues = []; for (const block of txt.trim().split(/\n\s*\n/)) { const lines = block.trim().split('\n'); const tl = lines.find(l => l.includes('-->')); if (!tl) continue; const [s, e] = tl.split('-->').map(x => x.trim()); const text = lines.slice(lines.indexOf(tl) + 1).join('\n').replace(/<[^>]+>/g, ''); if (text) cues.push({ s: parseSRTt(s), e: parseSRTt(e), t: text }) } return cues }
+    function parseSRTt(s) { const [h, m, se] = s.split(':'); const [ss, ms] = se.split(','); return +h * 3600 + +m * 60 + +ss + +ms / 1000 }
+    function updateSub(t) { const o = $('sub-overlay'); if (!S.subCues.length) { o.style.display = 'none'; return } const c = S.subCues.find(x => t >= x.s && t <= x.e); if (c) { o.textContent = c.t; o.style.display = 'block' } else o.style.display = 'none' }
+
+    /* ── WATCHLIST ── */
+    function toggleWL() { const it = S.item; if (!it) return; const i = S.wl.findIndex(x => x.subjectId === it.subjectId); if (i >= 0) { S.wl.splice(i, 1); toast('Removed from watchlist') } else { S.wl.push({ subjectId: it.subjectId, title: it.title, cover: img(it.cover) }); toast('Added to watchlist! 🎬', 'ok') } localStorage.setItem('cm_wl', JSON.stringify(S.wl)) }
+    function showWatchlist() { setSbActive(null); view('search'); $('s-head').textContent = '❤️ Watchlist'; const items = S.wl || []; $('s-sub').textContent = `${items.length} saved`; const grid = $('s-grid'); if (!items.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><h3>Watchlist Kosong</h3><p>Tekan ❤️ di film untuk menyimpan.</p></div>'; return } grid.innerHTML = ''; items.forEach((it, i) => { const c = document.createElement('div'); c.className = 'card'; c.style.animationDelay = i * 30 + 'ms'; c.innerHTML = `<div class="card-img-wrap"><img class="card-img" src="${it.cover || ''}" loading="lazy"/><div class="card-ov"><div class="card-play"><svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg></div></div></div><div class="card-info"><div class="card-name">${it.title}</div></div>`; c.onclick = () => { const fake = { subjectId: it.subjectId, title: it.title, cover: it.cover, subjectType: 1, detailPath: it.detailPath || '', description: '', releaseDate: '2000-01-01', duration: 0, genre: '', countryName: '', imdbRatingValue: 0 }; showDetail(fake) }; grid.appendChild(c) }) }
+
+    /* ── COMMENTS ── */
     const COLS = ['#e50914', '#7c3aed', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899'];
-    function avaColor(n) { let h = 0; for (const c of n) h = n.charCodeAt(0) + ((h << 5) - h); return COLS[Math.abs(h) % COLS.length]; }
+    function avaColor(n) { let h = 0; for (const c of n) h = n.charCodeAt(0) + ((h << 5) - h); return COLS[Math.abs(h) % COLS.length] }
+    function loadCmts() { const id = S.item?.subjectId; if (!id) return; const list = $('cmt-list'); const cmts = S.comments[id] || []; if (!cmts.length) { list.innerHTML = '<div style="color:var(--text3);text-align:center;padding:28px">Be the first to comment!</div>'; return } list.innerHTML = ''; cmts.slice().reverse().forEach(c => list.appendChild(mkCmt(c))) }
+    function mkCmt(c) { const el = document.createElement('div'); el.className = 'cmt'; const col = avaColor(c.name); el.innerHTML = `<div class="ava" style="background:${col};flex-shrink:0">${c.name[0].toUpperCase()}</div><div class="cmt-body"><div class="cmt-hd"><span class="cmt-name">${c.name}</span><span class="cmt-time">${c.time}</span></div><div class="cmt-txt">${c.text}</div><div class="cmt-acts"><button class="cmt-btn${c.liked ? ' liked' : ''}" onclick="toggleLike(this,'${c.id}')"><svg width="12" height="12" fill="${c.liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>${c.likes || 0}</button><button class="cmt-btn" onclick="replyTo('${c.name}')">Reply</button></div></div>`; return el }
+    function postCmt() { const ta = $('cmt-ta'), txt = ta.value.trim(); if (!txt) { toast('Write something first!'); return } const id = S.item?.subjectId; if (!id) return; if (!S.comments[id]) S.comments[id] = []; const c = { id: Date.now().toString(), name: 'You', text: txt, likes: 0, liked: false, time: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) }; S.comments[id].unshift(c); localStorage.setItem('cm_c', JSON.stringify(S.comments)); ta.value = ''; loadCmts(); toast('Comment posted! 💬', 'ok') }
+    function clearCmt() { $('cmt-ta').value = '' }
+    function replyTo(n) { $('cmt-ta').value = `@${n} `; $('cmt-ta').focus() }
+    function toggleLike(btn, id) { const sid = S.item?.subjectId; if (!sid) return; const c = (S.comments[sid] || []).find(x => x.id === id); if (!c) return; c.liked = !c.liked; c.likes = (c.likes || 0) + (c.liked ? 1 : -1); localStorage.setItem('cm_c', JSON.stringify(S.comments)); loadCmts() }
 
-    function loadCmts() {
-      const id = S.item?.subjectId; if (!id) return;
-      const list = $('cmt-list');
-      const cmts = S.comments[id] || [];
-      if (!cmts.length) { list.innerHTML = '<div style="color:var(--text3);text-align:center;padding:28px">Be the first to comment!</div>'; return; }
-      list.innerHTML = ''; cmts.slice().reverse().forEach(c => list.appendChild(mkCmt(c)));
-    }
-    function mkCmt(c) {
-      const el = document.createElement('div'); el.className = 'cmt';
-      const col = avaColor(c.name);
-      el.innerHTML = `
-    <div class="ava" style="background:${col};flex-shrink:0">${c.name[0].toUpperCase()}</div>
-    <div class="cmt-body">
-      <div class="cmt-hd">
-        <span class="cmt-name">${c.name}</span>
-        <span class="cmt-time">${c.time}</span>
-      </div>
-      <div class="cmt-txt">${c.text}</div>
-      <div class="cmt-acts">
-        <button class="cmt-btn${c.liked ? ' liked' : ''}" onclick="toggleLike(this,'${c.id}')">
-          <svg width="12" height="12" fill="${c.liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          ${c.likes || 0}
-        </button>
-        <button class="cmt-btn" onclick="replyTo('${c.name}')">Reply</button>
-      </div>
-    </div>`;
-      return el;
-    }
-    function postCmt() {
-      const ta = $('cmt-ta'), txt = ta.value.trim();
-      if (!txt) { toast('Write something first!'); return; }
-      const id = S.item?.subjectId; if (!id) return;
-      if (!S.comments[id]) S.comments[id] = [];
-      const c = {
-        id: Date.now().toString(), name: 'You', text: txt, likes: 0, liked: false,
-        time: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      };
-      S.comments[id].unshift(c);
-      localStorage.setItem('cm_c', JSON.stringify(S.comments));
-      ta.value = ''; loadCmts(); toast('Comment posted! 💬', 'ok');
-    }
-    function clearCmt() { $('cmt-ta').value = ''; }
-    function replyTo(n) { $('cmt-ta').value = `@${n} `; $('cmt-ta').focus(); }
-    function toggleLike(btn, id) {
-      const sid = S.item?.subjectId; if (!sid) return;
-      const c = (S.comments[sid] || []).find(x => x.id === id); if (!c) return;
-      c.liked = !c.liked; c.likes = (c.likes || 0) + (c.liked ? 1 : -1);
-      localStorage.setItem('cm_c', JSON.stringify(S.comments));
-      loadCmts();
+    /* ══════════════════════════════════════
+       LIVE TV — menggunakan IPTV-org public API
+       No API key required!
+       ══════════════════════════════════════ */
+
+    // Country emoji flags lookup
+    const COUNTRY_FLAGS = {
+      'AF': '🇦🇫', 'AL': '🇦🇱', 'DZ': '🇩🇿', 'AR': '🇦🇷', 'AU': '🇦🇺', 'AT': '🇦🇹', 'AZ': '🇦🇿', 'BH': '🇧🇭', 'BD': '🇧🇩', 'BE': '🇧🇪', 'BR': '🇧🇷', 'BG': '🇧🇬', 'KH': '🇰🇭', 'CA': '🇨🇦', 'CL': '🇨🇱', 'CN': '🇨🇳', 'CO': '🇨🇴', 'HR': '🇭🇷', 'CZ': '🇨🇿', 'DK': '🇩🇰', 'EG': '🇪🇬', 'FI': '🇫🇮', 'FR': '🇫🇷', 'GE': '🇬🇪', 'DE': '🇩🇪', 'GH': '🇬🇭', 'GR': '🇬🇷', 'HK': '🇭🇰', 'HU': '🇭🇺', 'IN': '🇮🇳', 'ID': '🇮🇩', 'IR': '🇮🇷', 'IQ': '🇮🇶', 'IL': '🇮🇱', 'IT': '🇮🇹', 'JP': '🇯🇵', 'JO': '🇯🇴', 'KZ': '🇰🇿', 'KE': '🇰🇪', 'KR': '🇰🇷', 'KW': '🇰🇼', 'LB': '🇱🇧', 'LY': '🇱🇾', 'MY': '🇲🇾', 'MV': '🇲🇻', 'MX': '🇲🇽', 'MA': '🇲🇦', 'MM': '🇲🇲', 'NL': '🇳🇱', 'NZ': '🇳🇿', 'NG': '🇳🇬', 'NO': '🇳🇴', 'OM': '🇴🇲', 'PK': '🇵🇰', 'PS': '🇵🇸', 'PE': '🇵🇪', 'PH': '🇵🇭', 'PL': '🇵🇱', 'PT': '🇵🇹', 'QA': '🇶🇦', 'RO': '🇷🇴', 'RU': '🇷🇺', 'SA': '🇸🇦', 'RS': '🇷🇸', 'SG': '🇸🇬', 'ZA': '🇿🇦', 'ES': '🇪🇸', 'SE': '🇸🇪', 'CH': '🇨🇭', 'SY': '🇸🇾', 'TW': '🇹🇼', 'TH': '🇹🇭', 'TN': '🇹🇳', 'TR': '🇹🇷', 'UA': '🇺🇦', 'AE': '🇦🇪', 'GB': '🇬🇧', 'US': '🇺🇸', 'UZ': '🇺🇿', 'VN': '🇻🇳', 'YE': '🇾🇪'
+    };
+
+    let _allChannels = null, _allStreams = null, _selectedCountry = null;
+
+    async function showLiveTV() {
+      setSbActive('sb-livetv');
+      view('live');
+      if ($('country-grid').innerHTML.includes('spin-wrap')) {
+        loadCountries();
+      }
     }
 
-    /* ───── SCROLL NAVBAR ───── */
-    window.addEventListener('scroll', () => { /* just for nav behaviour if needed */ });
+    async function loadCountries() {
+      try {
+        // Load countries from iptv-org API
+        const res = await fetch('https://iptv-org.github.io/api/countries.json');
+        const countries = await res.json();
+        const grid = $('country-grid'); grid.innerHTML = '';
 
-    /* ───── BOOT ───── */
+        // Show popular countries first, then others
+        const popular = ['US', 'GB', 'ID', 'IN', 'JP', 'KR', 'CN', 'AU', 'DE', 'FR', 'IT', 'ES', 'BR', 'CA', 'MX', 'RU', 'AR', 'SA', 'AE', 'EG', 'TR', 'TH', 'VN', 'MY', 'PH', 'SG', 'NL', 'PL', 'UA', 'IR'];
+        const sorted = [...countries.filter(c => popular.includes(c.code)), ...countries.filter(c => !popular.includes(c.code))];
+
+        sorted.forEach(c => {
+          const flag = COUNTRY_FLAGS[c.code] || '🌐';
+          const card = document.createElement('div');
+          card.className = 'country-card';
+          card.innerHTML = `<div class="country-flag">${flag}</div><div class="country-name">${c.name}</div><div class="country-count">${c.channels || 0} ch</div>`;
+          card.onclick = () => loadCountryChannels(c, card);
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        $('country-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Gagal load</h3><p>Cek koneksi internet kamu.</p></div>`;
+      }
+    }
+
+    async function loadCountryChannels(country, card) {
+      // Update active state
+      document.querySelectorAll('.country-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      _selectedCountry = country;
+
+      $('channels-head').style.display = 'block';
+      $('channels-title').textContent = `${COUNTRY_FLAGS[country.code] || '🌐'} ${country.name}`;
+      $('channels-sub').textContent = 'Loading channels…';
+      $('channel-grid').innerHTML = '<div class="spin-wrap" style="grid-column:1/-1"><div class="spin"></div><span class="spin-lbl">Loading channels…</span></div>';
+      $('channel-grid').scrollIntoView({ behavior: 'smooth' });
+
+      try {
+        // Load all channels if not cached
+        if (!_allChannels) {
+          const r = await fetch('https://iptv-org.github.io/api/channels.json');
+          _allChannels = await r.json();
+        }
+        // Filter by country
+        const channels = _allChannels.filter(ch => ch.country === country.code && !ch.closed);
+        $('channels-sub').textContent = `${channels.length} channels ditemukan`;
+
+        if (!channels.length) {
+          $('channel-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><p>Tidak ada channel untuk ${country.name}.</p></div>`;
+          return;
+        }
+
+        // Load streams if not cached
+        if (!_allStreams) {
+          const r2 = await fetch('https://iptv-org.github.io/api/streams.json');
+          _allStreams = await r2.json();
+        }
+
+        // Map streams by channel id
+        const streamMap = {};
+        _allStreams.forEach(s => { if (s.channel && s.url) streamMap[s.channel] = s.url });
+
+        const grid = $('channel-grid'); grid.innerHTML = '';
+        let shown = 0;
+        channels.forEach(ch => {
+          const streamUrl = streamMap[ch.id];
+          if (!streamUrl) return; // skip channels without streams
+          const card = document.createElement('div');
+          card.className = 'ch-card';
+          card.id = 'ch-' + ch.id.replace(/[^a-z0-9]/gi, '_');
+          card.innerHTML = `<img class="ch-logo" src="${ch.logo || ''}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23141428\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'16\' fill=\'%23555\' text-anchor=\'middle\' dy=\'.35em\'%3E📺%3C/text%3E%3C/svg%3E'"/><div class="ch-info"><div class="ch-name">${ch.name}</div><div class="ch-cat">${ch.categories?.join(', ') || 'General'}</div></div><div class="ch-live-dot"></div>`;
+          card.onclick = () => playLiveChannel(ch, streamUrl, card);
+          grid.appendChild(card);
+          shown++;
+        });
+
+        if (!shown) {
+          grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><p>Tidak ada stream aktif untuk ${country.name}.</p></div>`;
+        } else {
+          $('channels-sub').textContent = `${shown} channels dengan stream aktif`;
+        }
+      } catch (e) {
+        $('channel-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Error</h3><p>${e.message}</p></div>`;
+      }
+    }
+
+    function playLiveChannel(ch, streamUrl, card) {
+      // Update playing state
+      document.querySelectorAll('.ch-card').forEach(c => c.classList.remove('playing'));
+      card.classList.add('playing');
+
+      // Update info bar
+      $('live-ch-logo').src = ch.logo || '';
+      $('live-ch-name').textContent = ch.name;
+      $('live-ch-country').textContent = `${COUNTRY_FLAGS[ch.country] || ''} ${ch.country} · ${ch.categories?.join(', ') || 'General'}`;
+
+      // Show player
+      const wrap = $('live-player-wrap'); wrap.classList.add('show'); wrap.scrollIntoView({ behavior: 'smooth' });
+
+      // Destroy existing HLS
+      if (liveHls) { liveHls.destroy(); liveHls = null }
+      const lv = $('live-vid'); lv.src = '';
+
+      // Play
+      const isHLS = streamUrl.includes('.m3u8') || streamUrl.toLowerCase().includes('m3u8');
+      if (isHLS && Hls.isSupported()) {
+        liveHls = new Hls({ enableWorker: false, maxLoadingDelay: 10, maxRetryDelay: 5, xhrSetup: (xhr) => { xhr.timeout = 15000 } });
+        liveHls.loadSource(streamUrl);
+        liveHls.attachMedia(lv);
+        liveHls.on(Hls.Events.MANIFEST_PARSED, () => lv.play().catch(() => { }));
+        liveHls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) { toast('Stream error — channel might be offline', 'err'); card.classList.remove('playing') } });
+      } else {
+        lv.src = streamUrl;
+        lv.play().catch(() => { toast('Cannot play this stream in browser', 'err') });
+      }
+      toast(`📡 Playing: ${ch.name}`, 'ok');
+    }
+
+    function stopLive() {
+      if (liveHls) { liveHls.destroy(); liveHls = null }
+      const lv = $('live-vid'); lv.src = ''; lv.pause();
+      $('live-player-wrap').classList.remove('show');
+      document.querySelectorAll('.ch-card').forEach(c => c.classList.remove('playing'));
+    }
+
+    /* ── BOOT ── */
     (async () => {
       try {
         await api('/health');
         toast('CloudMovies ready 🎬', 'ok');
         loadHome();
       } catch (e) {
-        showModal(
-          '⚠️ Backend Not Running',
-          'The Python backend is not running. Please run the start script: python backend.py (or uvicorn backend:app --port 8000). Then reload this page.',
-          null
-        );
+        showModal('⚠️ Backend Not Running', 'The Python backend is not running. Please run: uvicorn backend:app --port 8000. Then reload this page.', null);
         $('m-btn').style.display = 'none';
       }
     })();
   </script>
 
-  <!-- FOOTER -->
   <footer id="site-footer">
     <div class="footer-logo">Cloud<span>Movies</span></div>
-    <div class="footer-credit">
-      Website streaming film gratis untuk semua
-    </div>
+    <div class="footer-credit">Website streaming film gratis untuk semua</div>
     <div class="footer-made">
       <span>Dibuat oleh</span>
-      <span class="footer-badge">
-        <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24">
+      <span class="footer-badge"><svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24">
           <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-        </svg>
-        LannGood
-      </span>
-      <span class="heart">♥</span>
-      <span>dibantu</span>
+        </svg>LannGood</span>
+      <span class="heart">♥</span><span>dibantu</span>
       <a href="https://claude.ai" target="_blank" class="footer-badge"
-        style="color:#cc785c;border-color:rgba(204,120,92,.4);background:rgba(204,120,92,.1)">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
-        </svg>
-        Claude.ai
-      </a>
+        style="color:#cc785c;border-color:rgba(204,120,92,.4);background:rgba(204,120,92,.1)"><svg width="11"
+          height="11" viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="12" r="10" />
+        </svg>Claude.ai</a>
     </div>
   </footer>
 </body>
