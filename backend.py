@@ -87,8 +87,10 @@ INDEX_HTML = os.path.join(BASE_DIR, "index.html")
 
 # Include AI router
 from ai_router import router as ai_router
+from iptv_router import router as iptv_router
 
 app.include_router(ai_router)
+app.include_router(iptv_router)
 
 
 @app.get("/", response_class=HTMLResponse)

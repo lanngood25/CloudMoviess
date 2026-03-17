@@ -3087,7 +3087,7 @@
       'AF': '🇦🇫', 'AL': '🇦🇱', 'DZ': '🇩🇿', 'AR': '🇦🇷', 'AU': '🇦🇺', 'AT': '🇦🇹', 'AZ': '🇦🇿', 'BH': '🇧🇭', 'BD': '🇧🇩', 'BE': '🇧🇪', 'BR': '🇧🇷', 'BG': '🇧🇬', 'KH': '🇰🇭', 'CA': '🇨🇦', 'CL': '🇨🇱', 'CN': '🇨🇳', 'CO': '🇨🇴', 'HR': '🇭🇷', 'CZ': '🇨🇿', 'DK': '🇩🇰', 'EG': '🇪🇬', 'FI': '🇫🇮', 'FR': '🇫🇷', 'GE': '🇬🇪', 'DE': '🇩🇪', 'GH': '🇬🇭', 'GR': '🇬🇷', 'HK': '🇭🇰', 'HU': '🇭🇺', 'IN': '🇮🇳', 'ID': '🇮🇩', 'IR': '🇮🇷', 'IQ': '🇮🇶', 'IL': '🇮🇱', 'IT': '🇮🇹', 'JP': '🇯🇵', 'JO': '🇯🇴', 'KZ': '🇰🇿', 'KE': '🇰🇪', 'KR': '🇰🇷', 'KW': '🇰🇼', 'LB': '🇱🇧', 'LY': '🇱🇾', 'MY': '🇲🇾', 'MV': '🇲🇻', 'MX': '🇲🇽', 'MA': '🇲🇦', 'MM': '🇲🇲', 'NL': '🇳🇱', 'NZ': '🇳🇿', 'NG': '🇳🇬', 'NO': '🇳🇴', 'OM': '🇴🇲', 'PK': '🇵🇰', 'PS': '🇵🇸', 'PE': '🇵🇪', 'PH': '🇵🇭', 'PL': '🇵🇱', 'PT': '🇵🇹', 'QA': '🇶🇦', 'RO': '🇷🇴', 'RU': '🇷🇺', 'SA': '🇸🇦', 'RS': '🇷🇸', 'SG': '🇸🇬', 'ZA': '🇿🇦', 'ES': '🇪🇸', 'SE': '🇸🇪', 'CH': '🇨🇭', 'SY': '🇸🇾', 'TW': '🇹🇼', 'TH': '🇹🇭', 'TN': '🇹🇳', 'TR': '🇹🇷', 'UA': '🇺🇦', 'AE': '🇦🇪', 'GB': '🇬🇧', 'US': '🇺🇸', 'UZ': '🇺🇿', 'VN': '🇻🇳', 'YE': '🇾🇪'
     };
 
-    let _allChannels = null, _allStreams = null, _selectedCountry = null;
+    let _selectedCountry = null;
 
     async function showLiveTV() {
       setSbActive('sb-livetv');
@@ -3099,12 +3099,13 @@
 
     async function loadCountries() {
       try {
-        // Load countries from iptv-org API
-        const res = await fetch('https://iptv-org.github.io/api/countries.json');
+        // Hit backend — backend proxy ke iptv-org + cache otomatis
+        const res = await fetch('/api/iptv/countries');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const countries = await res.json();
         const grid = $('country-grid'); grid.innerHTML = '';
 
-        // Show popular countries first, then others
+        // Popular countries first
         const popular = ['US', 'GB', 'ID', 'IN', 'JP', 'KR', 'CN', 'AU', 'DE', 'FR', 'IT', 'ES', 'BR', 'CA', 'MX', 'RU', 'AR', 'SA', 'AE', 'EG', 'TR', 'TH', 'VN', 'MY', 'PH', 'SG', 'NL', 'PL', 'UA', 'IR'];
         const sorted = [...countries.filter(c => popular.includes(c.code)), ...countries.filter(c => !popular.includes(c.code))];
 
@@ -3117,12 +3118,11 @@
           grid.appendChild(card);
         });
       } catch (e) {
-        $('country-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Gagal load</h3><p>Cek koneksi internet kamu.</p></div>`;
+        $('country-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Gagal load</h3><p>${e.message}</p></div>`;
       }
     }
 
     async function loadCountryChannels(country, card) {
-      // Update active state
       document.querySelectorAll('.country-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
       card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -3135,49 +3135,29 @@
       $('channel-grid').scrollIntoView({ behavior: 'smooth' });
 
       try {
-        // Load all channels if not cached
-        if (!_allChannels) {
-          const r = await fetch('https://iptv-org.github.io/api/channels.json');
-          _allChannels = await r.json();
-        }
-        // Filter by country
-        const channels = _allChannels.filter(ch => ch.country === country.code && !ch.closed);
-        $('channels-sub').textContent = `${channels.length} channels ditemukan`;
+        // Satu endpoint — backend sudah gabungkan channels + streams + cache
+        const res = await fetch(`/api/iptv/channels-with-streams?country=${country.code}`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const channels = await res.json();
 
         if (!channels.length) {
-          $('channel-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><p>Tidak ada channel untuk ${country.name}.</p></div>`;
+          $('channel-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><p>Tidak ada stream aktif untuk ${country.name}.</p></div>`;
+          $('channels-sub').textContent = '0 channels';
           return;
         }
 
-        // Load streams if not cached
-        if (!_allStreams) {
-          const r2 = await fetch('https://iptv-org.github.io/api/streams.json');
-          _allStreams = await r2.json();
-        }
-
-        // Map streams by channel id
-        const streamMap = {};
-        _allStreams.forEach(s => { if (s.channel && s.url) streamMap[s.channel] = s.url });
-
         const grid = $('channel-grid'); grid.innerHTML = '';
-        let shown = 0;
         channels.forEach(ch => {
-          const streamUrl = streamMap[ch.id];
-          if (!streamUrl) return; // skip channels without streams
-          const card = document.createElement('div');
-          card.className = 'ch-card';
-          card.id = 'ch-' + ch.id.replace(/[^a-z0-9]/gi, '_');
-          card.innerHTML = `<img class="ch-logo" src="${ch.logo || ''}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23141428\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'16\' fill=\'%23555\' text-anchor=\'middle\' dy=\'.35em\'%3E📺%3C/text%3E%3C/svg%3E'"/><div class="ch-info"><div class="ch-name">${ch.name}</div><div class="ch-cat">${ch.categories?.join(', ') || 'General'}</div></div><div class="ch-live-dot"></div>`;
-          card.onclick = () => playLiveChannel(ch, streamUrl, card);
-          grid.appendChild(card);
-          shown++;
+          const c2 = document.createElement('div');
+          c2.className = 'ch-card';
+          c2.id = 'ch-' + ch.id.replace(/[^a-z0-9]/gi, '_');
+          c2.innerHTML = `<img class="ch-logo" src="${ch.logo || ''}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23141428\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'16\' fill=\'%23555\' text-anchor=\'middle\' dy=\'.35em\'%3E📺%3C/text%3E%3C/svg%3E'"/><div class="ch-info"><div class="ch-name">${ch.name}</div><div class="ch-cat">${ch.categories?.join(', ') || 'General'}</div></div><div class="ch-live-dot"></div>`;
+          // stream_url sudah ada langsung dari backend response
+          c2.onclick = () => playLiveChannel(ch, ch.stream_url, c2);
+          grid.appendChild(c2);
         });
 
-        if (!shown) {
-          grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><p>Tidak ada stream aktif untuk ${country.name}.</p></div>`;
-        } else {
-          $('channels-sub').textContent = `${shown} channels dengan stream aktif`;
-        }
+        $('channels-sub').textContent = `${channels.length} channels dengan stream aktif`;
       } catch (e) {
         $('channel-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Error</h3><p>${e.message}</p></div>`;
       }
