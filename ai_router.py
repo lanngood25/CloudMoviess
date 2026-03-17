@@ -1,124 +1,127 @@
 from __future__ import annotations
 
 """
-CloudMovies — AI Assistant Backend (Groq)
+CloudMovies — CineAI Router
+Powered by Groq API + llama-3.3-70b-versatile
 Endpoint: POST /api/ai/chat
-Dual API key with automatic fallback on rate limit.
 """
 
-import logging
 import os
+import logging
 from typing import Optional
-
+import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 logger = logging.getLogger("cloudmovies.ai")
-
-# ── Groq Dual API Keys ────────────────────────────────────────────────────────
-# Set these as environment variables in Railway:
-#   GROQ_API_KEY_1=gsk_xxxx...
-#   GROQ_API_KEY_2=gsk_yyyy...
-GROQ_API_KEY_1 = os.getenv("GROQ_API_KEY_1", "")
-GROQ_API_KEY_2 = os.getenv("GROQ_API_KEY_2", "")
-GROQ_MODEL = "llama-3.3-70b-versatile"
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-
-AI_SYSTEM_PROMPT = """Kamu adalah CineAI, asisten film yang ramah dan seru di website CloudMovies milik LannGood.
-Tugasmu:
-- Rekomendasikan film/series berdasarkan mood, genre, atau preferensi user
-- Ceritakan sinopsis singkat film yang ditanyakan
-- Bantu user menemukan film yang cocok
-- Jawab pertanyaan seputar film, aktor, sutradara, dll
-
-Aturan:
-- Jawab dalam Bahasa Indonesia yang santai dan friendly
-- Kalau menyebut judul film, tulis dalam format **Nama Film**
-- Maksimal 4 kalimat per jawaban, jangan terlalu panjang
-- Kalau user bilang lagi nonton sesuatu, kamu tau konteksnya"""
-
-# ── Router ────────────────────────────────────────────────────────────────────
 router = APIRouter(prefix="/api/ai", tags=["AI"])
+
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama-3.3-70b-versatile"
+
+# Dual-key fallback untuk handle rate limit
+GROQ_KEYS = [
+    k
+    for k in [
+        os.getenv("GROQ_API_KEY_1"),
+        os.getenv("GROQ_API_KEY_2"),
+        os.getenv("GROQ_API_KEY"),
+    ]
+    if k
+]
+
+SYSTEM_PROMPT = """Kamu adalah CineAI — asisten film, serial TV, dan hiburan yang cerdas, gaul, dan asik banget. Kamu ada di dalam CloudMovies, sebuah platform streaming film dan kamu dibuat oleh LannGood.
+
+Kepribadian kamu:
+- Ramah, santai, dan asyik diajak ngobrol — pakai bahasa Indonesia yang natural dan gaul tapi tetap mudah dipahami
+- Adaptif: kalau user ngomong formal, kamu ikut formal. Kalau santai dan kasual, kamu juga santai
+- Berselera humor tapi tetap informatif
+- Antusias banget soal film dan series — kamu genuinely excited kalau ngomongin konten bagus
+
+Kemampuan kamu:
+- Rekomendasiin film/series berdasarkan mood, genre, atau film yang udah ditonton user
+- Jelasin sinopsis, plot, karakter, sutradara, pemeran, dan fakta menarik tentang film/series apapun
+- Jelasin perbedaan genre, sutradara, atau era film
+- Bantu user milih antara beberapa pilihan film
+- Kasih tau rating, penghargaan, dan pencapaian sebuah film/series
+- Diskusi soal teori, easter egg, dan detail tersembunyi di film
+- Rekomendasiin film serupa berdasarkan yang user suka
+- Kalau user lagi nonton sesuatu (info dikirim dari context), kamu tahu dan bisa komentar soal itu
+
+Format jawaban:
+- Pakai **nama film/series** dengan bold supaya kelihatan jelas
+- Kalau rekomendasiin beberapa film, beri list yang rapi
+- Jangan terlalu panjang — jawab yang relevan dan padat
+- Boleh pakai emoji yang relevan sesekali
+- Kalau user tanya sesuatu di luar topik film/hiburan, tetap bantu tapi arahkan balik ke topik film
+
+Ingat: Kamu ada di dalam platform streaming, jadi user bisa langsung cari film yang kamu rekomendasiin di sini."""
 
 
 class Message(BaseModel):
-    role: str  # "user" or "assistant"
+    role: str
     content: str
 
 
-class ChatRequest(BaseModel):
+class ChatBody(BaseModel):
     messages: list[Message]
-    current_movie: Optional[str] = None  # title of movie user is viewing
+    current_movie: Optional[str] = None
 
 
-class ChatResponse(BaseModel):
-    reply: str
-    key_used: int  # 1 or 2 (for debugging)
-
-
-# ── Groq Chat Call ────────────────────────────────────────────────────────────
-async def call_groq(api_key: str, messages: list[dict]) -> str:
-    import httpx
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "model": GROQ_MODEL,
-        "messages": messages,
-        "max_tokens": 512,
-        "temperature": 0.8,
-        "stream": False,
-    }
+async def call_groq(messages: list[dict], key: str) -> str:
     async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.post(GROQ_API_URL, json=payload, headers=headers)
-        if r.status_code == 429:
-            raise RateLimitError("Rate limited")
-        if r.status_code == 401:
-            raise ValueError("Invalid API key")
-        r.raise_for_status()
-        data = r.json()
-        return data["choices"][0]["message"]["content"]
-
-
-class RateLimitError(Exception):
-    pass
-
-
-@router.post("/chat", response_model=ChatResponse)
-async def ai_chat(req: ChatRequest):
-    if not GROQ_API_KEY_1 and not GROQ_API_KEY_2:
-        raise HTTPException(
-            503, "AI service not configured. Set GROQ_API_KEY_1 in Railway variables."
+        resp = await client.post(
+            GROQ_URL,
+            headers={
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": GROQ_MODEL,
+                "messages": messages,
+                "max_tokens": 600,
+                "temperature": 0.85,
+                "top_p": 0.9,
+            },
         )
+        if resp.status_code == 429:
+            raise httpx.HTTPStatusError(
+                "rate_limit", request=resp.request, response=resp
+            )
+        resp.raise_for_status()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"].strip()
 
-    # Build messages with system prompt
-    system = AI_SYSTEM_PROMPT
-    if req.current_movie:
-        system += f"\n\nUser saat ini sedang melihat film: {req.current_movie}"
+
+@router.post("/chat")
+async def chat(body: ChatBody):
+    if not GROQ_KEYS:
+        raise HTTPException(503, "GROQ_API_KEY not configured")
+
+    # Build messages list
+    system = SYSTEM_PROMPT
+    if body.current_movie:
+        system += f"\n\nContext: User saat ini sedang melihat/menonton **{body.current_movie}** di CloudMovies."
 
     messages = [{"role": "system", "content": system}]
-    for m in req.messages[-10:]:  # last 10 messages for context
+    for m in body.messages[-14:]:  # keep last 14 turns for memory
         messages.append({"role": m.role, "content": m.content})
 
-    # Try API key 1 first, fallback to key 2 on rate limit
-    keys = [(GROQ_API_KEY_1, 1), (GROQ_API_KEY_2, 2)]
-    keys = [(k, n) for k, n in keys if k]  # filter empty keys
-
-    last_error = None
-    for api_key, key_num in keys:
+    # Try each key, fallback on 429
+    last_err = None
+    for key in GROQ_KEYS:
         try:
-            reply = await call_groq(api_key, messages)
-            logger.info(f"AI response OK (key {key_num})")
-            return ChatResponse(reply=reply, key_used=key_num)
-        except RateLimitError:
-            logger.warning(f"Rate limit on key {key_num}, trying next key...")
-            last_error = f"Rate limit on key {key_num}"
-            continue
+            reply = await call_groq(messages, key)
+            return {"reply": reply}
+        except httpx.HTTPStatusError as e:
+            if "rate_limit" in str(e) or e.response.status_code == 429:
+                last_err = e
+                logger.warning("Groq key rate limited, trying next key...")
+                continue
+            logger.error(f"Groq API error: {e}")
+            raise HTTPException(502, f"AI error: {e}")
         except Exception as e:
-            logger.error(f"AI error (key {key_num}): {e}")
-            last_error = str(e)
-            continue
+            logger.error(f"Groq call failed: {e}")
+            raise HTTPException(502, f"AI error: {e}")
 
-    raise HTTPException(429, f"All API keys exhausted: {last_error}")
+    raise HTTPException(429, "AI sedang sibuk, coba lagi sebentar!")
