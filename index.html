@@ -1975,31 +1975,75 @@
       font-size: .9rem
     }
 
+    /* ── COUNTRY GRID ── */
+    .country-section {
+      padding: 0 40px 32px
+    }
+
+    .country-search-wrap {
+      margin-bottom: 18px;
+      position: relative;
+      max-width: 400px
+    }
+
+    .country-search-wrap svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text3);
+      pointer-events: none
+    }
+
+    .country-search-input {
+      width: 100%;
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 10px 18px 10px 42px;
+      font-size: .88rem;
+      color: var(--text);
+      outline: none;
+      transition: all .3s;
+      font-family: 'Outfit', sans-serif
+    }
+
+    .country-search-input:focus {
+      border-color: var(--red);
+      background: rgba(229, 9, 20, .06)
+    }
+
+    .country-search-input::placeholder {
+      color: var(--text3)
+    }
+
     .country-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 10px;
-      padding: 0 40px 28px
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px
     }
 
     .country-card {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
-      padding: 14px 10px;
+      gap: 6px;
+      padding: 16px 8px 12px;
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       cursor: pointer;
-      transition: all .2s;
-      text-align: center
+      transition: all .22s;
+      text-align: center;
+      position: relative;
+      overflow: hidden
     }
 
     .country-card:hover {
-      border-color: var(--red);
-      background: var(--red-dim);
-      transform: translateY(-2px)
+      border-color: rgba(229, 9, 20, .5);
+      background: rgba(229, 9, 20, .06);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .3)
     }
 
     .country-card.active {
@@ -2007,28 +2051,36 @@
       background: var(--red-dim)
     }
 
+    .country-card.active::after {
+      content: '✓';
+      position: absolute;
+      top: 5px;
+      right: 7px;
+      font-size: .6rem;
+      color: var(--red);
+      font-weight: 800
+    }
+
     .country-flag {
-      font-size: 2rem;
-      line-height: 1
+      font-size: 2.4rem;
+      line-height: 1;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .3))
     }
 
     .country-name {
-      font-size: .78rem;
+      font-size: .72rem;
       font-weight: 600;
-      color: var(--text2)
+      color: var(--text2);
+      line-height: 1.2
     }
 
     .country-card.active .country-name {
       color: var(--red)
     }
 
-    .country-count {
-      font-size: .68rem;
-      color: var(--text3)
-    }
-
+    /* ── LIVE PLAYER ── */
     .live-player-wrap {
-      padding: 0 40px 24px;
+      padding: 0 40px 28px;
       display: none
     }
 
@@ -2054,41 +2106,58 @@
     .live-info-bar {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 12px 0 0
+      gap: 14px;
+      padding: 14px 0 0
+    }
+
+    .live-ch-logo-wrap {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden
     }
 
     .live-ch-logo {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       object-fit: contain;
-      border-radius: 8px;
-      background: var(--card);
-      flex-shrink: 0
+      padding: 4px
     }
 
     .live-ch-name {
       font-weight: 700;
-      font-size: .95rem
+      font-size: 1rem
     }
 
     .live-ch-country {
       font-size: .78rem;
       color: var(--text3);
-      margin-top: 2px
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 5px
     }
 
     .live-stop-btn {
       margin-left: auto;
-      padding: 8px 18px;
-      border-radius: 8px;
-      background: rgba(229, 9, 20, .15);
-      border: 1px solid rgba(229, 9, 20, .4);
+      padding: 9px 20px;
+      border-radius: 10px;
+      background: rgba(229, 9, 20, .12);
+      border: 1px solid rgba(229, 9, 20, .35);
       color: var(--red);
-      font-size: .82rem;
+      font-size: .84rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all .2s
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      gap: 6px
     }
 
     .live-stop-btn:hover {
@@ -2096,89 +2165,65 @@
       color: #fff
     }
 
-    .channel-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 10px;
-      padding: 0 40px 60px
-    }
-
-    .ch-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all .2s
-    }
-
-    .ch-card:hover {
-      border-color: var(--red);
-      background: rgba(229, 9, 20, .07);
-      transform: translateY(-1px)
-    }
-
-    .ch-card.playing {
-      border-color: var(--red);
-      background: var(--red-dim)
-    }
-
-    .ch-logo {
-      width: 40px;
-      height: 40px;
-      object-fit: contain;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, .05);
-      flex-shrink: 0;
-      padding: 4px
-    }
-
-    .ch-info .ch-name {
-      font-size: .84rem;
-      font-weight: 600
-    }
-
-    .ch-info .ch-cat {
-      font-size: .7rem;
-      color: var(--text3);
-      margin-top: 2px
-    }
-
-    .ch-live-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--red);
-      flex-shrink: 0;
-      animation: livePulse 1.5s ease-in-out infinite;
-      margin-left: auto
-    }
-
-    /* ── CHANNEL SEARCH ── */
-    .ch-search-wrap {
-      padding: 0 40px 16px;
+    /* ── CHANNELS SECTION ── */
+    .channels-section {
+      padding: 0 40px 60px;
       display: none
     }
 
-    .ch-search-wrap.show {
+    .channels-section.show {
       display: block
     }
 
+    .channels-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 16px;
+      flex-wrap: wrap
+    }
+
+    .channels-header-left h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: .5px;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .channels-header-left p {
+      font-size: .84rem;
+      color: var(--text2);
+      margin-top: 3px
+    }
+
+    .ch-search-box {
+      position: relative;
+      flex-shrink: 0
+    }
+
+    .ch-search-box svg {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text3);
+      pointer-events: none
+    }
+
     .ch-search-input {
-      width: 100%;
-      max-width: 480px;
       background: rgba(255, 255, 255, .05);
       border: 1px solid var(--border);
       border-radius: 50px;
-      padding: 10px 18px 10px 42px;
-      font-size: .9rem;
+      padding: 9px 18px 9px 38px;
+      font-size: .85rem;
       color: var(--text);
       outline: none;
       transition: all .3s;
-      font-family: 'Outfit', sans-serif
+      font-family: 'Outfit', sans-serif;
+      width: 240px
     }
 
     .ch-search-input:focus {
@@ -2190,25 +2235,109 @@
       color: var(--text3)
     }
 
-    .ch-search-box {
-      position: relative;
-      display: inline-block;
-      width: 100%;
-      max-width: 480px
+    .channel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px
     }
 
-    .ch-search-box svg {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
+    .ch-card {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 12px 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all .2s
+    }
+
+    .ch-card:hover {
+      border-color: rgba(229, 9, 20, .5);
+      background: rgba(229, 9, 20, .06);
+      transform: translateY(-1px)
+    }
+
+    .ch-card.playing {
+      border-color: var(--red);
+      background: var(--red-dim)
+    }
+
+    .ch-logo-wrap {
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden
+    }
+
+    .ch-logo {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+      padding: 3px
+    }
+
+    .ch-logo-fallback {
+      font-size: 1.4rem;
+      line-height: 1
+    }
+
+    .ch-info {
+      flex: 1;
+      min-width: 0
+    }
+
+    .ch-info .ch-name {
+      font-size: .85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .ch-info .ch-cat {
+      font-size: .7rem;
       color: var(--text3);
-      pointer-events: none
+      margin-top: 2px
+    }
+
+    .ch-live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--red);
+      flex-shrink: 0;
+      animation: livePulse 1.5s ease-in-out infinite
     }
 
     @media(max-width:768px) {
-      .ch-search-wrap {
-        padding: 0 16px 16px
+
+      .country-section,
+      .channels-section,
+      .live-player-wrap {
+        padding-left: 16px;
+        padding-right: 16px
+      }
+
+      .ch-search-input {
+        width: 180px
+      }
+
+      .channels-header {
+        flex-direction: column;
+        align-items: flex-start
+      }
+
+      .ch-search-input {
+        width: 100%;
+        max-width: 400px
       }
     }
 
@@ -2533,44 +2662,70 @@
       <h1><span>📡</span> Live TV <span class="live-badge">LIVE</span></h1>
       <p>Tonton siaran langsung dari berbagai negara — gratis, tanpa login</p>
     </div>
+
+    <!-- Player (muncul setelah pilih channel) -->
     <div class="live-player-wrap" id="live-player-wrap">
       <div class="live-player-inner">
         <video id="live-vid" controls playsinline crossorigin="anonymous"></video>
       </div>
       <div class="live-info-bar">
-        <img class="live-ch-logo" id="live-ch-logo" src="" alt="" />
+        <div class="live-ch-logo-wrap">
+          <img class="live-ch-logo" id="live-ch-logo" src="" alt=""
+            onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+          <span style="display:none;font-size:1.6rem">📺</span>
+        </div>
         <div>
           <div class="live-ch-name" id="live-ch-name">—</div>
           <div class="live-ch-country" id="live-ch-country">—</div>
         </div>
-        <button class="live-stop-btn" onclick="stopLive()">⏹ Stop</button>
+        <button class="live-stop-btn" onclick="stopLive()">
+          <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+          </svg>
+          Stop
+        </button>
       </div>
     </div>
-    <div style="padding:0 40px 20px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.5px;margin-bottom:16px">🌏 Pilih
-        Negara</div>
+
+    <!-- Country picker -->
+    <div class="country-section">
+      <div
+        style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.5px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+        <span>🌏</span> Pilih Negara
+      </div>
+      <div class="country-search-wrap">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+        <input class="country-search-input" id="country-search" type="text" placeholder="Cari negara…"
+          autocomplete="off" oninput="filterCountries(this.value)" />
+      </div>
       <div class="country-grid" id="country-grid">
         <div class="spin-wrap" style="grid-column:1/-1">
           <div class="spin"></div><span class="spin-lbl">Loading countries…</span>
         </div>
       </div>
     </div>
-    <div style="padding:0 40px 10px;display:none" id="channels-head">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.5px;margin-bottom:4px"
-        id="channels-title">Channels</div>
-      <div style="font-size:.85rem;color:var(--text2);margin-bottom:16px" id="channels-sub"></div>
-    </div>
-    <div class="ch-search-wrap" id="ch-search-wrap">
-      <div class="ch-search-box">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" />
-        </svg>
-        <input class="ch-search-input" id="ch-search" type="text" placeholder="Cari channel…" autocomplete="off"
-          oninput="filterChannels(this.value)" />
+
+    <!-- Channels section (muncul setelah pilih negara) -->
+    <div class="channels-section" id="channels-section">
+      <div class="channels-header">
+        <div class="channels-header-left">
+          <h2 id="channels-title">📺 Channels</h2>
+          <p id="channels-sub"></p>
+        </div>
+        <div class="ch-search-box">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+          <input class="ch-search-input" id="ch-search" type="text" placeholder="Cari channel…" autocomplete="off"
+            oninput="filterChannels(this.value)" />
+        </div>
       </div>
+      <div class="channel-grid" id="channel-grid"></div>
     </div>
-    <div class="channel-grid" id="channel-grid"></div>
   </div>
 
   <!-- DETAIL VIEW -->
@@ -3244,6 +3399,7 @@
     };
 
     let _selectedCountry = null;
+    let _allCountries = [];
 
     async function showLiveTV() {
       setSbActive('sb-livetv');
@@ -3255,44 +3411,60 @@
 
     async function loadCountries() {
       try {
-        // Hit backend — backend proxy ke iptv-org + cache otomatis
         const res = await fetch('/api/iptv/countries');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const countries = await res.json();
-        const grid = $('country-grid'); grid.innerHTML = '';
 
-        // Popular countries first
+        // Popular first
         const popular = ['US', 'GB', 'ID', 'IN', 'JP', 'KR', 'CN', 'AU', 'DE', 'FR', 'IT', 'ES', 'BR', 'CA', 'MX', 'RU', 'AR', 'SA', 'AE', 'EG', 'TR', 'TH', 'VN', 'MY', 'PH', 'SG', 'NL', 'PL', 'UA', 'IR'];
-        const sorted = [...countries.filter(c => popular.includes(c.code)), ...countries.filter(c => !popular.includes(c.code))];
-
-        sorted.forEach(c => {
-          const flag = COUNTRY_FLAGS[c.code] || '🌐';
-          const card = document.createElement('div');
-          card.className = 'country-card';
-          card.innerHTML = `<div class="country-flag">${flag}</div><div class="country-name">${c.name}</div><div class="country-count">${c.channels || 0} ch</div>`;
-          card.onclick = () => loadCountryChannels(c, card);
-          grid.appendChild(card);
-        });
+        _allCountries = [
+          ...countries.filter(c => popular.includes(c.code)),
+          ...countries.filter(c => !popular.includes(c.code))
+        ];
+        renderCountryGrid(_allCountries);
       } catch (e) {
-        $('country-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Gagal load</h3><p>${e.message}</p></div>`;
+        $('country-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Gagal load negara</h3><p>${e.message}</p></div>`;
       }
+    }
+
+    function renderCountryGrid(list) {
+      const grid = $('country-grid');
+      grid.innerHTML = '';
+      list.forEach(c => {
+        const flag = COUNTRY_FLAGS[c.code] || '🌐';
+        const card = document.createElement('div');
+        card.className = 'country-card' + ((_selectedCountry && _selectedCountry.code === c.code) ? ' active' : '');
+        card.dataset.code = c.code;
+        card.innerHTML = `<div class="country-flag">${flag}</div><div class="country-name">${c.name}</div>`;
+        card.onclick = () => loadCountryChannels(c, card);
+        grid.appendChild(card);
+      });
+    }
+
+    function filterCountries(q) {
+      if (!_allCountries.length) return;
+      const kw = q.toLowerCase().trim();
+      const filtered = kw
+        ? _allCountries.filter(c => c.name.toLowerCase().includes(kw) || c.code.toLowerCase().includes(kw))
+        : _allCountries;
+      renderCountryGrid(filtered);
     }
 
     let _allLoadedChannels = [];
 
     async function loadCountryChannels(country, card) {
+      // Update active state
       document.querySelectorAll('.country-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
-      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       _selectedCountry = country;
 
-      $('channels-head').style.display = 'block';
-      $('channels-title').textContent = `${COUNTRY_FLAGS[country.code] || '🌐'} ${country.name}`;
+      const flag = COUNTRY_FLAGS[country.code] || '🌐';
+      $('channels-section').classList.add('show');
+      $('channels-title').innerHTML = `${flag} ${country.name}`;
       $('channels-sub').textContent = 'Loading channels…';
-      $('channel-grid').innerHTML = '<div class="spin-wrap" style="grid-column:1/-1"><div class="spin"></div><span class="spin-lbl">Loading channels…</span></div>';
-      $('ch-search-wrap').classList.remove('show');
       $('ch-search').value = '';
-      $('channel-grid').scrollIntoView({ behavior: 'smooth' });
+      $('channel-grid').innerHTML = '<div class="spin-wrap" style="grid-column:1/-1"><div class="spin"></div><span class="spin-lbl">Fetching channels…</span></div>';
+      $('channels-section').scrollIntoView({ behavior: 'smooth' });
 
       try {
         const res = await fetch(`/api/iptv/channels-with-streams?country=${country.code}`);
@@ -3307,70 +3479,118 @@
 
         _allLoadedChannels = channels;
         renderChannels(channels);
-        $('channels-sub').textContent = `${channels.length} channels dengan stream aktif`;
-        $('ch-search-wrap').classList.add('show');
+        $('channels-sub').textContent = `${channels.length} channels tersedia`;
       } catch (e) {
         $('channel-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Error</h3><p>${e.message}</p></div>`;
       }
     }
 
     function renderChannels(channels) {
-      const grid = $('channel-grid'); grid.innerHTML = '';
+      const grid = $('channel-grid');
+      grid.innerHTML = '';
       channels.forEach(ch => {
-        const c2 = document.createElement('div');
-        c2.className = 'ch-card';
-        c2.id = 'ch-' + ch.id.replace(/[^a-z0-9]/gi, '_');
-        c2.innerHTML = `<img class="ch-logo" src="${ch.logo || ''}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\'%3E%3Crect width=\'40\' height=\'40\' fill=\'%23141428\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'16\' fill=\'%23555\' text-anchor=\'middle\' dy=\'.35em\'%3E📺%3C/text%3E%3C/svg%3E'"/><div class="ch-info"><div class="ch-name">${ch.name}</div><div class="ch-cat">${ch.categories?.join(', ') || 'General'}</div></div><div class="ch-live-dot"></div>`;
-        c2.onclick = () => playLiveChannel(ch, ch.stream_url, c2);
-        grid.appendChild(c2);
+        const card = document.createElement('div');
+        card.className = 'ch-card';
+        card.id = 'ch-' + ch.id.replace(/[^a-z0-9]/gi, '_');
+
+        // Logo: img with emoji fallback
+        const logoHtml = ch.logo
+          ? `<img class="ch-logo" src="${ch.logo}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><span class="ch-logo-fallback" style="display:none">📺</span>`
+          : `<span class="ch-logo-fallback">📺</span>`;
+
+        const cats = (ch.categories || []).join(', ') || 'General';
+        const langs = (ch.languages || []).map(l => l.name || l).join(', ');
+        const flag = COUNTRY_FLAGS[ch.country] || '';
+
+        card.innerHTML = `
+      <div class="ch-logo-wrap">${logoHtml}</div>
+      <div class="ch-info">
+        <div class="ch-name">${ch.name}</div>
+        <div class="ch-cat">${cats}${langs ? ' · ' + langs : ''}</div>
+      </div>
+      <div class="ch-live-dot"></div>`;
+        card.onclick = () => playLiveChannel(ch, ch.stream_url, card);
+        grid.appendChild(card);
       });
     }
 
     function filterChannels(q) {
       if (!_allLoadedChannels.length) return;
-      const keyword = q.toLowerCase().trim();
-      const filtered = keyword
-        ? _allLoadedChannels.filter(ch => ch.name.toLowerCase().includes(keyword) || (ch.categories || []).some(c => c.toLowerCase().includes(keyword)))
+      const kw = q.toLowerCase().trim();
+      const filtered = kw
+        ? _allLoadedChannels.filter(ch =>
+          ch.name.toLowerCase().includes(kw) ||
+          (ch.categories || []).some(c => c.toLowerCase().includes(kw)) ||
+          (ch.languages || []).some(l => (l.name || l).toLowerCase().includes(kw))
+        )
         : _allLoadedChannels;
       renderChannels(filtered);
-      $('channels-sub').textContent = `${filtered.length} channels${keyword ? ' ditemukan' : ' dengan stream aktif'}`;
+      $('channels-sub').textContent = kw
+        ? `${filtered.length} channel ditemukan`
+        : `${filtered.length} channels tersedia`;
     }
 
     function playLiveChannel(ch, streamUrl, card) {
-      // Update playing state
+      if (!streamUrl) { toast('Stream URL tidak tersedia', 'err'); return }
+
       document.querySelectorAll('.ch-card').forEach(c => c.classList.remove('playing'));
       card.classList.add('playing');
 
       // Update info bar
-      $('live-ch-logo').src = ch.logo || '';
+      const logo = $('live-ch-logo');
+      const logoFallback = logo.nextElementSibling;
+      if (ch.logo) {
+        logo.src = ch.logo;
+        logo.style.display = '';
+        if (logoFallback) logoFallback.style.display = 'none';
+      } else {
+        logo.style.display = 'none';
+        if (logoFallback) logoFallback.style.display = 'block';
+      }
       $('live-ch-name').textContent = ch.name;
-      $('live-ch-country').textContent = `${COUNTRY_FLAGS[ch.country] || ''} ${ch.country} · ${ch.categories?.join(', ') || 'General'}`;
+      const flag = COUNTRY_FLAGS[ch.country] || '';
+      const cats = (ch.categories || []).join(', ') || 'General';
+      $('live-ch-country').innerHTML = `<span>${flag}</span> ${ch.country} &nbsp;·&nbsp; ${cats}`;
 
-      // Show player
-      const wrap = $('live-player-wrap'); wrap.classList.add('show'); wrap.scrollIntoView({ behavior: 'smooth' });
+      // Show & scroll to player
+      const wrap = $('live-player-wrap');
+      wrap.classList.add('show');
+      wrap.scrollIntoView({ behavior: 'smooth' });
 
       // Destroy existing HLS
       if (liveHls) { liveHls.destroy(); liveHls = null }
       const lv = $('live-vid'); lv.src = '';
 
-      // Play
       const isHLS = streamUrl.includes('.m3u8') || streamUrl.toLowerCase().includes('m3u8');
       if (isHLS && Hls.isSupported()) {
-        liveHls = new Hls({ enableWorker: false, maxLoadingDelay: 10, maxRetryDelay: 5, xhrSetup: (xhr) => { xhr.timeout = 15000 } });
+        liveHls = new Hls({
+          enableWorker: false,
+          maxLoadingDelay: 10,
+          maxRetryDelay: 5,
+          fragLoadingTimeOut: 15000,
+          manifestLoadingTimeOut: 15000,
+        });
         liveHls.loadSource(streamUrl);
         liveHls.attachMedia(lv);
         liveHls.on(Hls.Events.MANIFEST_PARSED, () => lv.play().catch(() => { }));
-        liveHls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) { toast('Stream error — channel might be offline', 'err'); card.classList.remove('playing') } });
+        liveHls.on(Hls.Events.ERROR, (_, d) => {
+          if (d.fatal) {
+            toast('Stream offline atau tidak bisa diputar', 'err');
+            card.classList.remove('playing');
+          }
+        });
+      } else if (lv.canPlayType('application/vnd.apple.mpegurl')) {
+        lv.src = streamUrl; lv.play().catch(() => { });
       } else {
         lv.src = streamUrl;
-        lv.play().catch(() => { toast('Cannot play this stream in browser', 'err') });
+        lv.play().catch(() => { toast('Browser tidak bisa memutar stream ini', 'err') });
       }
-      toast(`📡 Playing: ${ch.name}`, 'ok');
+      toast(`📡 ${ch.name}`, 'ok');
     }
 
     function stopLive() {
       if (liveHls) { liveHls.destroy(); liveHls = null }
-      const lv = $('live-vid'); lv.src = ''; lv.pause();
+      const lv = $('live-vid'); lv.pause(); lv.src = '';
       $('live-player-wrap').classList.remove('show');
       document.querySelectorAll('.ch-card').forEach(c => c.classList.remove('playing'));
     }
